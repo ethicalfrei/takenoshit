@@ -273,7 +273,7 @@ export const ROSTER: BossDef[] = [
       { id: "receipt", telegraphMs: 450, activeMs: 260, recoverMs: 370, lane: "high", kind: "melee", damage: 13, telegraphCue: "acknowledge receipt, high" },
     ],
     finisher: {
-      prompt: "FILE HER",
+      prompt: "SPANK HER HARD",
       mashGoal: 9,
       windowMs: 5200,
       successLine: "Incident closed. Drawer shut.",
@@ -352,7 +352,7 @@ export const ROSTER: BossDef[] = [
       { id: "hat", telegraphMs: 400, activeMs: 240, recoverMs: 320, lane: "right", kind: "melee", damage: 16, telegraphCue: "wear this hat, now" },
     ],
     finisher: {
-      prompt: "SUPLEX HIM OUT THE WINDOW",
+      prompt: "SHOVE HIS HEAD UP HIS ASS",
       mashGoal: 10,
       windowMs: 5500,
       successLine: "Ownership. He flew it.",
