@@ -133,9 +133,11 @@ export class FightSim {
   koT = 0;
   projectiles: Projectile[] = [];
   perfectDodge = false;
+  dodgedThisAttack = false;
   hitsThisWindow = 0;
   stunCycles = 0;
   beatT = 0;
+  beatIndex = 0;
 
   onSfx: (name: SfxName, opts?: { rate?: number }) => void = () => {};
   onVibrate: (ms: number) => void = () => {};
@@ -193,10 +195,12 @@ export class FightSim {
     this.projectiles = [];
     this.cinematic = null;
     this.perfectDodge = false;
+    this.dodgedThisAttack = false;
     this.starPunch = false;
     this.hitsThisWindow = 0;
     this.stunCycles = 0;
     this.beatT = 0;
+    this.beatIndex = 0;
     this.cue = "";
     this.juice.trauma = 0;
     this.juice.hitstop = 0;
@@ -327,45 +331,48 @@ export class FightSim {
 
   private tickPlayer(dt: number, input: FrameInput) {
     this.playerPoseT += dt;
-    const busy = this.playerPose === "hurt" || this.playerPose === "grab";
+    const busy = this.playerPose === "hurt";
+    const cueUp = this.ai.kind === "telegraph" || this.ai.kind === "attack";
     const poseLock =
-      (this.playerPose === "punch" && this.playerPoseT < 0.22) ||
-      (this.playerPose === "dodgeL" && this.playerPoseT < 0.28) ||
-      (this.playerPose === "dodgeR" && this.playerPoseT < 0.28) ||
-      (this.playerPose === "duck" && this.playerPoseT < 0.3) ||
-      (this.playerPose === "hurt" && this.playerPoseT < 0.42);
+      !cueUp &&
+      ((this.playerPose === "punch" && this.playerPoseT < 0.22) ||
+        (this.playerPose === "dodgeL" && this.playerPoseT < 0.55) ||
+        (this.playerPose === "dodgeR" && this.playerPoseT < 0.55) ||
+        (this.playerPose === "duck" && this.playerPoseT < 0.55) ||
+        (this.playerPose === "hurt" && this.playerPoseT < 0.42));
 
     if (!busy && !poseLock) {
-      if (input.dodgeLPressed) {
-        this.setPlayer("dodgeL", 0.28);
-        this.invuln = 0.3;
+      if (input.dodgeLPressed || input.dodgeRPressed || input.duckPressed) {
+        if (input.dodgeLPressed) this.setPlayer("dodgeL", 0.55);
+        else if (input.dodgeRPressed) this.setPlayer("dodgeR", 0.55);
+        else this.setPlayer("duck", 0.55);
+        this.invuln = 0.95;
         this.onSfx("dodge");
-        if (this.ai.kind === "telegraph" && this.ai.pattern.lane === "left") this.perfectDodge = true;
-      } else if (input.dodgeRPressed) {
-        this.setPlayer("dodgeR", 0.28);
-        this.invuln = 0.3;
-        this.onSfx("dodge");
-        if (this.ai.kind === "telegraph" && this.ai.pattern.lane === "right") this.perfectDodge = true;
-      } else if (input.duckPressed) {
-        this.setPlayer("duck", 0.3);
-        this.invuln = 0.32;
-        this.onSfx("dodge");
-        if (this.ai.kind === "telegraph" && this.ai.pattern.lane === "high") this.perfectDodge = true;
+        if (cueUp) this.dodgedThisAttack = true;
+        const lane = this.ai.kind === "telegraph" || this.ai.kind === "attack" ? this.ai.pattern.lane : null;
+        if (lane === "left" && input.dodgeLPressed) this.perfectDodge = true;
+        if (lane === "right" && input.dodgeRPressed) this.perfectDodge = true;
+        if (lane === "high" && input.duckPressed) this.perfectDodge = true;
+        if (lane === "center") this.perfectDodge = true;
       } else if (input.punchLPressed || input.punchRPressed) {
         this.tryPunch(input.punchLPressed ? "L" : "R");
       } else if (input.grabPressed && this.ai.kind === "stunned" && this.finishReady()) {
         this.startFinisher();
       } else if (input.grabPressed && this.ai.kind === "stunned") {
         this.juice.float(180, 240, "PUNISH", "#d4a574");
-      } else if (this.playerPoseT > 0.32) {
-        this.playerPose = "idle";
+      } else if (this.playerPoseT > 0.55) {
+        const holdDodge =
+          cueUp &&
+          this.dodgedThisAttack &&
+          (this.playerPose === "dodgeL" || this.playerPose === "dodgeR" || this.playerPose === "duck");
+        if (!holdDodge) this.playerPose = "idle";
       }
     } else if (this.playerPose === "hurt" && this.playerPoseT >= 0.42) {
       this.playerPose = "idle";
     }
-    if (this.playerPose === "dodgeL" && input.dodgeL) this.invuln = Math.max(this.invuln, 0.08);
-    if (this.playerPose === "dodgeR" && input.dodgeR) this.invuln = Math.max(this.invuln, 0.08);
-    if (this.playerPose === "duck" && input.duck) this.invuln = Math.max(this.invuln, 0.08);
+    if (this.playerPose === "dodgeL" && input.dodgeL) this.invuln = Math.max(this.invuln, 0.12);
+    if (this.playerPose === "dodgeR" && input.dodgeR) this.invuln = Math.max(this.invuln, 0.12);
+    if (this.playerPose === "duck" && input.duck) this.invuln = Math.max(this.invuln, 0.12);
 
     if (this.ai.kind === "stunned" && this.playerPose !== "hurt") {
       this.cue = this.finishReady() ? "GRAB" : "PUNISH";
@@ -641,13 +648,42 @@ export class FightSim {
   private tickBeatdown(dt: number) {
     this.invuln = 0;
     this.beatT += dt;
-    this.bossPose = "attack";
+    this.guard = "none";
     this.cue = "";
-    if (this.beatT > 0.38) {
-      this.beatT = 0;
-      this.line = pick(this.boss.tauntLines);
-      this.hitPlayer(34);
+    const clubs: { at: number; line: string }[] = [
+      { at: 0.55, line: "On the ground. Now." },
+      { at: 1.5, line: "Don't resist." },
+      { at: 2.45, line: "Hands." },
+      { at: 3.4, line: "That's a club." },
+    ];
+    if (this.beatIndex < clubs.length && this.beatT >= clubs[this.beatIndex].at) {
+      this.line = clubs[this.beatIndex].line;
+      this.clubHit();
+      this.beatIndex += 1;
     }
+    if (this.beatIndex >= clubs.length && this.beatT >= 4.15) {
+      this.phase = "ending";
+      this.koT = 0;
+      this.playerPose = "hurt";
+      this.bossPose = "attack";
+      this.onSfx("ko");
+      this.line = this.boss.koLine;
+    }
+  }
+
+  private clubHit() {
+    this.setPlayer("hurt", 0.55);
+    this.bossPose = "attack";
+    this.bossScaleY = 1.22;
+    this.bossScaleX = 1.08;
+    this.bossX = (Math.random() - 0.5) * 0.35;
+    this.juice.freeze(0.1);
+    this.juice.addTrauma(0.95);
+    this.juice.screenFlash("#c44536", 0.5);
+    this.juice.burst(180, 460, 22, "#c44536", 240);
+    this.onSfx("hurt");
+    this.onVibrate(55);
+    this.playerHp = Math.max(1, this.playerHp - 18);
   }
 
   private windUp() {
@@ -655,7 +691,8 @@ export class FightSim {
     const pattern = pick(pool.length ? pool : this.boss.patterns);
     this.lastPattern = pattern.id;
     this.hitsThisWindow = 0;
-    this.ai = { kind: "telegraph", t: pattern.telegraphMs / 1000 + 0.2, pattern };
+    this.dodgedThisAttack = false;
+    this.ai = { kind: "telegraph", t: pattern.telegraphMs / 1000 + 0.38, pattern };
     this.cue = pattern.telegraphCue;
     this.onSfx("whoosh", { rate: 0.85 });
   }
@@ -680,7 +717,7 @@ export class FightSim {
   private tryConnect(pattern: AttackPattern, ai: Extract<BossAI, { kind: "attack" }>) {
     if (pattern.kind === "projectile") return;
     ai.connected = true;
-    if (this.invuln > 0 && isSafe(pattern.lane, this.playerPose)) {
+    if (this.avoided(pattern.lane)) {
       this.juice.float(90, 400, "MISS", "#d4a574");
       this.combo += 1;
       this.score += 20;
@@ -690,13 +727,19 @@ export class FightSim {
     this.hitPlayer(Math.max(5, Math.round(pattern.damage * 0.6)));
   }
 
+  private avoided(lane: Lane) {
+    if (this.dodgedThisAttack) return true;
+    if (this.invuln > 0 && isSafe(lane, this.playerPose)) return true;
+    return false;
+  }
+
   private tickProjectiles(dt: number) {
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
       p.t += dt;
       if (p.t >= p.life) {
         this.projectiles.splice(i, 1);
-        if (this.invuln > 0 && isSafe(p.lane, this.playerPose)) {
+        if (this.avoided(p.lane)) {
           this.juice.float(90, 400, "MISS", "#d4a574");
           this.combo += 1;
           this.score += 20;

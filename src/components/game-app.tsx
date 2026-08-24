@@ -235,7 +235,7 @@ export function GameApp() {
           }}
         />
       )}
-      {hud.phase === "ending" && hud.endingT > 5.6 && (
+      {hud.phase === "ending" && hud.endingT > 6.2 && (
         <EndOverlay
           copy={ENDING}
           score={hud.score}
@@ -248,6 +248,8 @@ export function GameApp() {
           }}
         />
       )}
+
+      {hud.boss.id === "cops" && hud.phase === "fight" && <BeatdownBanner line={hud.line} />}
 
       {showFightUi && (
         <Hud
@@ -269,7 +271,7 @@ export function GameApp() {
         />
       )}
 
-      {showFightUi && !hud.paused && hud.phase !== "ko" && (
+      {showFightUi && !hud.paused && hud.phase !== "ko" && hud.boss.id !== "cops" && (
         <GestureSurface input={inputRef.current} telegraph={hud.telegraphLane} grab={hud.cue === "GRAB" || Boolean(hud.mash)} />
       )}
 
@@ -428,24 +430,29 @@ function Hud({ hud, onPause }: { hud: HudState; onPause: () => void }) {
           <Bar value={hud.boss.id === "cops" ? 1 : b} color="bg-brick" flip />
         </div>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="font-display text-sm tracking-[0.2em] text-stun">
-          STARS {hud.stars}/3
-        </p>
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-3">
-          <div className="h-full bg-stun" style={{ width: `${s * 100}%` }} />
+      {hud.boss.id !== "cops" && (
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <p className="font-display text-sm tracking-[0.2em] text-stun">
+            STARS {hud.stars}/3
+          </p>
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-3">
+            <div className="h-full bg-stun" style={{ width: `${s * 100}%` }} />
+          </div>
+          <p className="font-display text-lg tabular-nums text-cream">
+            {hud.combo > 1 ? `${hud.combo}x` : ""} {hud.score}
+          </p>
         </div>
-        <p className="font-display text-lg tabular-nums text-cream">
-          {hud.combo > 1 ? `${hud.combo}x` : ""} {hud.score}
-        </p>
-      </div>
+      )}
       <p className="mt-2 text-center font-display text-xl leading-none tracking-wide text-cream">{hud.boss.subtitle}</p>
-      {hud.countdown !== null && (
+      {hud.countdown !== null && hud.boss.id !== "cops" && (
         <p className="mt-6 text-center font-display text-7xl leading-none text-cream">
           {hud.countdown <= 0 ? "FIGHT" : hud.countdown}
         </p>
       )}
-      {hud.line && hud.phase !== "finisher" && (
+      {hud.countdown !== null && hud.boss.id === "cops" && (
+        <p className="mt-6 text-center font-display text-6xl leading-none text-brick">NO</p>
+      )}
+      {hud.line && hud.phase !== "finisher" && hud.boss.id !== "cops" && (
         <p className="mx-auto mt-3 max-w-[22rem] text-balance text-center text-sm text-cream-dim">{hud.line}</p>
       )}
       {hud.cue && hud.cue !== "GRAB" && (
@@ -462,6 +469,23 @@ function Bar({ value, color, flip }: { value: number; color: string; flip?: bool
         className={`h-full ${color} ${flip ? "ml-auto" : ""}`}
         style={{ width: `${Math.max(0.04, value) * 100}%` }}
       />
+    </div>
+  );
+}
+
+function BeatdownBanner({ line }: { line: string }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[12] flex flex-col justify-end bg-gradient-to-t from-ink via-ink/40 to-transparent px-6 pb-16">
+      <p className="font-display text-6xl leading-[0.85] tracking-tight text-cream drop-shadow-[0_2px_16px_rgba(20,14,12,0.9)]">
+        THEY
+        <br />
+        HAVE
+        <br />
+        CLUBS
+      </p>
+      {line && (
+        <p className="mt-5 font-display text-3xl leading-tight tracking-wide text-brick">{line}</p>
+      )}
     </div>
   );
 }

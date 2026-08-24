@@ -32,7 +32,7 @@ export const HOW_TO: { title: string; steps: { label: string; detail: string }[]
     },
     {
       label: "Swipe",
-      detail: "On the fight itself. Left, right, or down. Standing still is how you ended up here.",
+      detail: "When it says move, swipe. Left, right, or down. Do that and you are clear — you do not have to time the hit.",
     },
     {
       label: "Tap",
@@ -262,7 +262,7 @@ export const DEFEAT: ScreenCopy = {
 
 export const ENDING: ScreenCopy = {
   title: "That's the government",
-  body: "You took no shit all day. Then they had clubs. That's the end.",
+  body: "You took no shit all day. Then they had clubs. You don't get a fatality. That's the end.",
   cta: "Start the day over",
 };
 

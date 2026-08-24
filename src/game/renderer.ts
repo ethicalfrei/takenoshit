@@ -154,7 +154,9 @@ export function drawFrame(
       ctx.restore();
     }
     const flash = vm.bossPose === "hurt" ? 0.12 : 0;
-    sprite(ctx, bimg, w * 0.5 + vm.bossX * 40, h * 0.68, h * 0.52, {
+    const bossH = vm.boss.id === "cops" ? h * 0.62 : h * 0.52;
+    const bossY = vm.boss.id === "cops" ? h * 0.72 : h * 0.68;
+    sprite(ctx, bimg, w * 0.5 + vm.bossX * 40, bossY, bossH, {
       rot: vm.bossRot,
       sx: vm.bossScaleX,
       sy: vm.bossScaleY,
@@ -164,7 +166,7 @@ export function drawFrame(
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = 0.35;
-      sprite(ctx, bimg, w * 0.5 + vm.bossX * 40, h * 0.68, h * 0.52, {
+      sprite(ctx, bimg, w * 0.5 + vm.bossX * 40, bossY, bossH, {
         rot: vm.bossRot,
         sx: vm.bossScaleX,
         sy: vm.bossScaleY,
@@ -204,6 +206,14 @@ export function drawFrame(
       sy: vm.playerSquash,
       sx: 1 / Math.max(0.7, vm.playerSquash),
     });
+  }
+
+  if (vm.boss.id === "cops" && (vm.phase === "fight" || vm.phase === "countdown")) {
+    const g2 = ctx.createRadialGradient(w * 0.5, h * 0.55, 40, w * 0.5, h * 0.5, h * 0.7);
+    g2.addColorStop(0, "rgba(196,69,54,0)");
+    g2.addColorStop(1, "rgba(80,12,16,0.55)");
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, w, h);
   }
 
   if (vm.telegraphLane && (vm.phase === "fight" || vm.phase === "countdown")) {
