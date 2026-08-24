@@ -144,7 +144,6 @@ export function createAudio(): GameAudio {
     const el = new Audio(url);
     el.loop = !url.includes("-verse") && !url.includes("-fatality") && !url.includes("victory") && !url.includes("defeat");
     el.preload = "auto";
-    el.crossOrigin = "anonymous";
     const src = c.createMediaElementSource(el);
     const gain = c.createGain();
     gain.gain.value = 0;
@@ -153,13 +152,14 @@ export function createAudio(): GameAudio {
     b = { el, gain };
     beds.set(url, b);
     el.addEventListener("error", () => {
-      bedsOn = false;
+      const fb = url.replace("-chorus.mp3", ".mp3").replace("-verse.mp3", ".mp3").replace("-fatality.mp3", ".mp3");
+      if (fb !== url) fadeToBed(fb);
     });
     return b;
   }
 
   function fadeToBed(url: string) {
-    if (!ctx || !musicBus || !bedsOn) return;
+    if (!ctx || !musicBus) return;
     const now = ctx.currentTime;
     for (const [u, b] of beds) {
       if (u === url) continue;
@@ -173,9 +173,7 @@ export function createAudio(): GameAudio {
     const next = ensureBed(url);
     if (!next) return;
     next.el.currentTime = 0;
-    void next.el.play().catch(() => {
-      bedsOn = false;
-    });
+    void next.el.play().catch(() => {});
     next.gain.gain.cancelScheduledValues(now);
     next.gain.gain.setValueAtTime(next.gain.gain.value, now);
     next.gain.gain.linearRampToValueAtTime(0.82, now + 0.38);
@@ -231,6 +229,7 @@ export function createAudio(): GameAudio {
         return { bpm: 70, drums: 0.15, drive: 0.08, bright: 0.12 };
       default:
         return { bpm: 108, drums: 0.7, drive: 0.3, bright: 0.4 };
+    }
   }
 
   function beep(

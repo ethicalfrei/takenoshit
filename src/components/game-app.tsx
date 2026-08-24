@@ -97,8 +97,9 @@ export function GameApp() {
       const assets = assetsRef.current;
       if (ctx) {
         const dpr = Math.min(2, window.devicePixelRatio || 1);
-        const w = canvas.clientWidth;
-        const h = canvas.clientHeight;
+        const box = canvas.getBoundingClientRect();
+        const w = Math.max(1, Math.floor(box.width || window.innerWidth));
+        const h = Math.max(1, Math.floor(box.height || window.innerHeight));
         if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
           canvas.width = Math.floor(w * dpr);
           canvas.height = Math.floor(h * dpr);
@@ -184,10 +185,10 @@ export function GameApp() {
   const showFightUi = hud.phase === "fight" || hud.phase === "countdown" || hud.phase === "finisher" || hud.phase === "ko";
 
   return (
-    <div className="relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-ink text-cream">
+    <div className="relative mx-auto h-dvh w-full max-w-[430px] overflow-hidden bg-ink text-cream">
       <canvas
         ref={canvasRef}
-        className="min-h-0 w-full flex-1 touch-none bg-ink"
+        className="absolute inset-0 z-0 h-full w-full touch-none bg-ink"
         aria-label="Take No Shit fight arena"
       />
 

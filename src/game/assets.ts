@@ -112,39 +112,64 @@ export const FATALITY_VID: Record<string, string> = {
   boss: asset("/fatalities/boss.mp4"),
 };
 
+function placeholder() {
+  const c = document.createElement("canvas");
+  c.width = 16;
+  c.height = 16;
+  const g = c.getContext("2d");
+  if (g) {
+    g.fillStyle = "#c45c26";
+    g.fillRect(0, 0, 16, 16);
+  }
+  const img = new Image();
+  img.src = c.toDataURL();
+  return img;
+}
+
 function loadImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
+  return new Promise<HTMLImageElement>((resolve) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`asset ${src}`));
+    img.onerror = () => resolve(placeholder());
     img.src = asset(src);
   });
 }
 
+async function pool<T, R>(items: T[], n: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let i = 0;
+  async function worker() {
+    while (i < items.length) {
+      const idx = i++;
+      out[idx] = await fn(items[idx]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, () => worker()));
+  return out;
+}
+
 async function loadMap(map: Record<string, string>) {
+  const entries = Object.entries(map);
+  const imgs = await pool(entries, 6, ([, p]) => loadImage(p));
   const out: Record<string, HTMLImageElement> = {};
-  await Promise.all(
-    Object.entries(map).map(async ([k, p]) => {
-      out[k] = await loadImage(p);
-    }),
-  );
+  entries.forEach(([k], i) => {
+    out[k] = imgs[i];
+  });
   return out;
 }
 
 export async function loadAssets(): Promise<SpriteBook> {
   const playerEntries = await loadMap(PATHS.player);
-  const walk = await Promise.all(PATHS.walk.map(loadImage));
+  const walk = await pool(PATHS.walk, 4, loadImage);
   const bosses: SpriteBook["bosses"] = {};
-  await Promise.all(
-    Object.entries(PATHS.bosses).map(async ([id, poses]) => {
-      bosses[id] = {
-        idle: await loadImage(poses.idle),
-        attack: await loadImage(poses.attack),
-        hurt: await loadImage(poses.hurt),
-      };
-    }),
-  );
+  const bossIds = Object.entries(PATHS.bosses);
+  await pool(bossIds, 3, async ([id, poses]) => {
+    bosses[id] = {
+      idle: await loadImage(poses.idle),
+      attack: await loadImage(poses.attack),
+      hurt: await loadImage(poses.hurt),
+    };
+  });
   return {
     player: playerEntries as SpriteBook["player"],
     walk,
