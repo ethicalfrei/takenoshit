@@ -8,6 +8,7 @@ export type MusicScene =
   | "manager"
   | "gym"
   | "boss"
+  | "cops"
   | "roommateV"
   | "leafV"
   | "bakerV"
@@ -15,6 +16,7 @@ export type MusicScene =
   | "managerV"
   | "gymV"
   | "bossV"
+  | "copsV"
   | "roommateF"
   | "leafF"
   | "bakerF"
@@ -22,6 +24,7 @@ export type MusicScene =
   | "managerF"
   | "gymF"
   | "bossF"
+  | "copsF"
   | "victory"
   | "defeat"
   | "dawn"
@@ -80,6 +83,7 @@ const BED_URL: Record<MusicScene, string> = {
   manager: asset(`/music/manager-chorus.mp3?${V}`),
   gym: asset(`/music/gym-chorus.mp3?${V}`),
   boss: asset(`/music/boss-chorus.mp3?${V}`),
+  cops: asset(`/music/cops.mp3?${V}`),
   roommateV: asset(`/music/roommate-verse.mp3?${V}`),
   leafV: asset(`/music/leaf-verse.mp3?${V}`),
   bakerV: asset(`/music/baker-verse.mp3?${V}`),
@@ -87,6 +91,7 @@ const BED_URL: Record<MusicScene, string> = {
   managerV: asset(`/music/manager-verse.mp3?${V}`),
   gymV: asset(`/music/gym-verse.mp3?${V}`),
   bossV: asset(`/music/boss-verse.mp3?${V}`),
+  copsV: asset(`/music/cops-verse.mp3?${V}`),
   roommateF: asset(`/music/roommate-fatality.mp3?${V}`),
   leafF: asset(`/music/leaf-fatality.mp3?${V}`),
   bakerF: asset(`/music/baker-fatality.mp3?${V}`),
@@ -94,6 +99,7 @@ const BED_URL: Record<MusicScene, string> = {
   managerF: asset(`/music/manager-fatality.mp3?${V}`),
   gymF: asset(`/music/gym-fatality.mp3?${V}`),
   bossF: asset(`/music/boss-fatality.mp3?${V}`),
+  copsF: asset(`/music/cops.mp3?${V}`),
   morning: asset(`/music/roommate-chorus.mp3?${V}`),
   midday: asset(`/music/manager-chorus.mp3?${V}`),
   finale: asset(`/music/boss-chorus.mp3?${V}`),

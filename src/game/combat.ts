@@ -12,7 +12,8 @@ export type Phase =
   | "finisher"
   | "ko"
   | "defeat"
-  | "victory";
+  | "victory"
+  | "ending";
 
 export type PlayerPose = "idle" | "punch" | "dodgeL" | "dodgeR" | "duck" | "hurt" | "grab";
 export type BossPose = "idle" | "attack" | "hurt" | "stun" | "ko";
@@ -49,6 +50,7 @@ export type HudState = {
   walkT: number;
   punchSide: "L" | "R" | null;
   finisherPlay: boolean;
+  endingT: number;
 };
 
 export type ViewModel = HudState & {
@@ -133,6 +135,7 @@ export class FightSim {
   perfectDodge = false;
   hitsThisWindow = 0;
   stunCycles = 0;
+  beatT = 0;
 
   onSfx: (name: SfxName, opts?: { rate?: number }) => void = () => {};
   onVibrate: (ms: number) => void = () => {};
@@ -158,7 +161,7 @@ export class FightSim {
   beginFight() {
     this.resetFight();
     this.phase = "countdown";
-    this.countdown = 3;
+    this.countdown = this.boss.id === "cops" ? 1 : 3;
     this.countdownT = 0;
     this.line = this.boss.introLine;
     this.onSfx("bell");
@@ -193,6 +196,7 @@ export class FightSim {
     this.starPunch = false;
     this.hitsThisWindow = 0;
     this.stunCycles = 0;
+    this.beatT = 0;
     this.cue = "";
     this.juice.trauma = 0;
     this.juice.hitstop = 0;
@@ -255,6 +259,14 @@ export class FightSim {
       return;
     }
 
+    if (this.phase === "ending") {
+      this.koT += dt;
+      this.playerPose = "hurt";
+      this.bossPose = "attack";
+      this.juice.update(dt);
+      return;
+    }
+
     if (this.phase !== "fight") {
       this.animateIdle(dt);
       this.juice.update(dt);
@@ -280,6 +292,12 @@ export class FightSim {
     }
 
     this.tickPlayer(dt, input);
+    if (this.boss.id === "cops") {
+      this.tickBeatdown(dt);
+      this.juice.update(dt);
+      this.spring(dt);
+      return;
+    }
     this.tickBoss(dt);
     this.tickProjectiles(dt);
     this.spring(dt);
@@ -362,6 +380,11 @@ export class FightSim {
     this.punchSide = side;
     this.setPlayer("punch", 0.22);
     this.onSfx("punch");
+    if (this.boss.id === "cops") {
+      this.juice.float(180, 240, "NOPE", "#cfc4b6");
+      this.combo = 0;
+      return;
+    }
     if (this.ai.kind === "telegraph" || this.ai.kind === "attack") {
       this.juice.float(180, 240, "DODGE FIRST", "#cfc4b6");
       this.combo = 0;
@@ -615,6 +638,18 @@ export class FightSim {
     }
   }
 
+  private tickBeatdown(dt: number) {
+    this.invuln = 0;
+    this.beatT += dt;
+    this.bossPose = "attack";
+    this.cue = "";
+    if (this.beatT > 0.38) {
+      this.beatT = 0;
+      this.line = pick(this.boss.tauntLines);
+      this.hitPlayer(34);
+    }
+  }
+
   private windUp() {
     const pool = this.boss.patterns.filter((p) => p.id !== this.lastPattern);
     const pattern = pick(pool.length ? pool : this.boss.patterns);
@@ -688,6 +723,15 @@ export class FightSim {
     this.onVibrate(35);
     this.line = "That one landed.";
     if (this.playerHp <= 0) {
+      if (this.boss.id === "cops") {
+        this.phase = "ending";
+        this.koT = 0;
+        this.playerPose = "hurt";
+        this.bossPose = "attack";
+        this.onSfx("ko");
+        this.line = this.boss.koLine;
+        return;
+      }
       this.phase = "defeat";
       this.onSfx("ko");
     }
@@ -716,6 +760,7 @@ export class FightSim {
       walkT: this.walkT,
       punchSide: this.punchSide,
       finisherPlay: this.phase === "finisher" && Boolean(this.cinematic),
+      endingT: this.phase === "ending" ? this.koT : 0,
     };
   }
 

@@ -143,7 +143,7 @@ export function drawFrame(
     const bimg =
       vm.bossPose === "attack" ? bset.attack : vm.bossPose === "hurt" || vm.bossPose === "stun" || vm.bossPose === "ko" ? bset.hurt : bset.idle;
     const glow = vm.boss.palette.glow;
-    if (vm.guard !== "none" && vm.phase === "fight") {
+    if (vm.guard !== "none" && vm.phase === "fight" && vm.boss.id !== "cops") {
       ctx.save();
       ctx.globalAlpha = 0.35 + Math.sin(vm.time * 8) * 0.1;
       ctx.fillStyle = glow;

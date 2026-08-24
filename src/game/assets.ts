@@ -62,6 +62,11 @@ const PATHS = {
       attack: "/sprites/boss-attack.png",
       hurt: "/sprites/boss-stun.png",
     },
+    cops: {
+      idle: "/sprites/cops-idle.png",
+      attack: "/sprites/cops-attack.png",
+      hurt: "/sprites/cops-hurt.png",
+    },
   },
   proj: {
     pizza: "/sprites/proj-pizza.png",
@@ -82,6 +87,7 @@ const PATHS = {
     manager: "/sprites/bg-office.jpg",
     gym: "/sprites/bg-gym.jpg",
     boss: "/sprites/bg-corner.jpg",
+    cops: "/sprites/bg-street.jpg",
   },
   walkBg: {
     roommate: "/walks/walk-roommate.jpg",
@@ -91,6 +97,7 @@ const PATHS = {
     manager: "/walks/walk-manager.jpg",
     gym: "/walks/walk-gym.jpg",
     boss: "/walks/walk-boss.jpg",
+    cops: "/walks/walk-cops.jpg",
   },
   fatality: {
     roommate: "/fatalities/roommate.jpg",
@@ -100,6 +107,7 @@ const PATHS = {
     manager: "/fatalities/manager.jpg",
     gym: "/fatalities/gym.jpg",
     boss: "/fatalities/boss.jpg",
+    cops: "/fatalities/cops.jpg",
   },
 };
 
@@ -111,6 +119,7 @@ export const FATALITY_VID: Record<string, string> = {
   manager: asset("/fatalities/manager.mp4"),
   gym: asset("/fatalities/gym.mp4"),
   boss: asset("/fatalities/boss.mp4"),
+  cops: asset("/fatalities/cops.mp4"),
 };
 
 function placeholder() {

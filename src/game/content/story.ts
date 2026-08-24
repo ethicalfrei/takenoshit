@@ -5,7 +5,7 @@ export type ScreenCopy = {
 };
 
 export type Interlude = {
-  bossId: "roommate" | "leaf" | "baker" | "barista" | "manager" | "gym" | "boss";
+  bossId: "roommate" | "leaf" | "baker" | "barista" | "manager" | "gym" | "boss" | "cops";
   clock: string;
   place: string;
   from: string;
@@ -19,7 +19,7 @@ export type Interlude = {
 
 export const TITLE: ScreenCopy = {
   title: "TAKE NO SHIT",
-  body: "You have one day. Seven fights. No patience left.",
+  body: "You have one day. Seven fights. Then the government.",
   cta: "Get up",
 };
 
@@ -207,6 +207,25 @@ export const INTERLUDES: Interlude[] = [
     answer: "No.",
     sting: "Take no shit.",
   },
+  {
+    bossId: "cops",
+    clock: "5:19 PM",
+    place: "The street outside",
+    from: "The lobby",
+    to: "The curb",
+    walkLine: "Elevator down. Street air. Lights.",
+    narrator: [
+      "Richard is folded. The day is supposed to be over.",
+      "Elevator down. Street air. That's home, in theory.",
+      "Then the lights. Then the voices. Then the government.",
+      "A cluster of cops. Clubs. The whole apparatus.",
+      "They want ID. They want a reason. They want you smaller.",
+      "You took no shit all day.",
+    ],
+    question: "Did you stand in the street and take it?",
+    answer: "You don't get a choice.",
+    sting: "That's the government.",
+  },
 ];
 
 export const VICTORY: ScreenCopy = {
@@ -221,7 +240,13 @@ export const DEFEAT: ScreenCopy = {
   cta: "Get up",
 };
 
-export const CREDITS_TAG = "Inbox closed. Key in the lock. You took none of it.";
+export const ENDING: ScreenCopy = {
+  title: "That's the government",
+  body: "You took no shit all day. Then they had clubs. That's the end.",
+  cta: "Start the day over",
+};
+
+export const CREDITS_TAG = "Inbox closed. Head ringing. You took none of it. They took you.";
 
 export const DAY_SONG_CAPTIONS: { scene: string; line: string }[] = [
   { scene: "dawn", line: "Grey light. The alarm already lost." },

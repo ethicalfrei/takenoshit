@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { createAudio, type GameAudio, type MusicScene } from "@/game/day-audio";
 import { loadAssets, FATALITY_VID, type SpriteBook } from "@/game/assets";
 import { FightSim, type HudState, type Phase } from "@/game/combat";
-import { INTERLUDES, TITLE, HOW_TO, PAUSE, VICTORY, DEFEAT, CREDITS_TAG, DAY_SONG_CAPTIONS, CONTROLS_HINT, type Interlude } from "@/game/content/story";
+import { INTERLUDES, TITLE, HOW_TO, PAUSE, VICTORY, DEFEAT, ENDING, CREDITS_TAG, DAY_SONG_CAPTIONS, CONTROLS_HINT, type Interlude } from "@/game/content/story";
 import { GameInput } from "@/game/input";
 import { drawFrame } from "@/game/renderer";
 import { loadSave, writeSave } from "@/game/save";
@@ -12,8 +12,9 @@ import { PLAYER_MAX_HP } from "@/game/content/roster";
 function sceneFor(phase: Phase, bossId: string): MusicScene {
   if (phase === "title" || phase === "howto") return "title";
   if (phase === "victory") return "victory";
+  if (phase === "ending") return "cops";
   if (phase === "defeat") return "defeat";
-  const bosses = ["roommate", "leaf", "baker", "barista", "manager", "gym", "boss"] as const;
+  const bosses = ["roommate", "leaf", "baker", "barista", "manager", "gym", "boss", "cops"] as const;
   const id = bosses.find((b) => b === bossId);
   if (!id) return "walk";
   if (phase === "interlude") return `${id}V`;
@@ -234,6 +235,19 @@ export function GameApp() {
           }}
         />
       )}
+      {hud.phase === "ending" && hud.endingT > 5.6 && (
+        <EndOverlay
+          copy={ENDING}
+          score={hud.score}
+          tag={CREDITS_TAG}
+          onCta={() => {
+            persist({ highScore: simRef.current.highScore });
+            simRef.current.phase = "title";
+            simRef.current.bossIndex = 0;
+            setHud(simRef.current.hud());
+          }}
+        />
+      )}
 
       {showFightUi && (
         <Hud
@@ -247,11 +261,11 @@ export function GameApp() {
 
       {hud.mash && <MashOverlay mash={hud.mash} />}
 
-      {hud.phase === "finisher" && (
+      {(hud.phase === "finisher" || hud.phase === "ending") && (
         <FatalityStage
           id={hud.boss.id}
           progress={hud.mash ? hud.mash.count / hud.mash.goal : 1}
-          playing={hud.finisherPlay}
+          playing={hud.finisherPlay || hud.phase === "ending"}
         />
       )}
 
@@ -404,10 +418,12 @@ function Hud({ hud, onPause }: { hud: HudState; onPause: () => void }) {
         </button>
         <div className="min-w-0 flex-1 text-right">
           <div className="flex items-baseline justify-between">
-            <span className="font-display text-lg tabular-nums leading-none text-cream-dim">{Math.ceil(hud.bossHp)}</span>
+            <span className="font-display text-lg tabular-nums leading-none text-cream-dim">
+              {hud.boss.id === "cops" ? "—" : Math.ceil(hud.bossHp)}
+            </span>
             <span className="truncate font-display text-lg leading-none text-cream">{hud.boss.name}</span>
           </div>
-          <Bar value={b} color="bg-brick" flip />
+          <Bar value={hud.boss.id === "cops" ? 1 : b} color="bg-brick" flip />
         </div>
       </div>
       <div className="mt-2 flex items-center justify-between gap-3">

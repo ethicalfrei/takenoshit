@@ -1,7 +1,7 @@
 export type Lane = "left" | "center" | "right" | "high";
 export type Guard = "left" | "right" | "none";
 export type AttackKind = "melee" | "projectile" | "slam";
-export type BossId = "roommate" | "leaf" | "baker" | "barista" | "manager" | "gym" | "boss";
+export type BossId = "roommate" | "leaf" | "baker" | "barista" | "manager" | "gym" | "boss" | "cops";
 export type ProjKind = "beer" | "pizza" | "paper" | "stapler" | "can" | "leaf" | "cup" | "plate";
 
 export type AttackPattern = {
@@ -317,6 +317,39 @@ export const ROSTER: BossDef[] = [
       windowMs: 5500,
       successLine: "Ownership. He wore it.",
       flavor: "You fold him like a bad quarterly and park his head where the sun does not synergy.",
+    },
+  },
+  {
+    id: "cops",
+    name: "The Government",
+    subtitle: "Nightstick Crew",
+    clock: "5:19 PM",
+    place: "The street outside",
+    introLine: "On the ground. Now.",
+    tauntLines: [
+      "ID.",
+      "Don't resist.",
+      "We asked you a question.",
+      "Hands.",
+      "That's a club.",
+    ],
+    hurtLines: ["—"],
+    koLine: "That's the end.",
+    hp: 999,
+    stunThreshold: 999,
+    guardCycleMs: 9999,
+    music: "finale",
+    palette: { ring: "#1a2744", glow: "#3d6bb3" },
+    bg: "/sprites/bg-street.jpg",
+    patterns: [
+      { id: "club", telegraphMs: 180, activeMs: 220, recoverMs: 80, lane: "center", kind: "melee", damage: 28, telegraphCue: "club" },
+    ],
+    finisher: {
+      prompt: "",
+      mashGoal: 99,
+      windowMs: 1000,
+      successLine: "That's the end.",
+      flavor: "They had clubs. You had a day.",
     },
   },
 ];
