@@ -12,22 +12,23 @@ export type SpriteBook = {
 const V = "v=horton-classic1";
 
 function asset(path: string) {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
   return `${base}${path}`;
 }
 
 const PATHS = {
   player: {
-    idle: `/sprites/player-idle.png?${V}`,
-    punch: `/sprites/player-punch.png?${V}`,
-    punch2: `/sprites/player-punch2.png?${V}`,
-    punch3: `/sprites/player-punch3.png?${V}`,
-    slap: `/sprites/player-slap.png?${V}`,
-    dodge: `/sprites/player-dodge.png?${V}`,
-    duck: `/sprites/player-duck.png?${V}`,
-    grab: `/sprites/player-grab.png?${V}`,
+    idle: "https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-idle.png",
+    punch: "https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-punch.png",
+    punch2: "https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-punch.png",
+    punch3: "https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-punch.png",
+    slap: "https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-slap.png",
+    dodge: "https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-dodge.png",
+    duck: "https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-duck.png",
+    grab: "https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-grab.png",
   },
-  walk: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `/sprites/player-walk-${i}.png?${V}`),
+  walk: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `https://raw.githubusercontent.com/ethicalfrei/takenoshit/9600961/public/sprites/player-walk-${i}.png`),
   bosses: {
     roommate: {
       idle: "/sprites/roommate-idle.png",
