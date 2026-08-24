@@ -134,7 +134,7 @@ export function GameApp() {
             audioRef.current?.prefetch(next.boss.id);
           }
         }
-        if (next.phase === "interlude" && next.walkT > 22) {
+        if (next.phase === "interlude" && next.walkT > 16) {
           sim.beginFight();
         }
       }
@@ -388,9 +388,10 @@ function InterludeOverlay({ data, walkT, onFight }: { data: Interlude; walkT: nu
       </div>
       {showQ && (
         <div className="mt-6">
-          <p className="text-base text-cream-dim">{data.question}</p>
-          <p className="mt-1 font-display text-3xl text-cream">{data.answer}</p>
-          <p className="font-display text-4xl leading-none text-brick">{data.sting}</p>
+          <p className="font-display text-3xl leading-tight text-cream">{data.question}</p>
+          {data.bossId === "cops" && (
+            <p className="mt-2 font-display text-4xl leading-none text-brick">{data.sting}</p>
+          )}
         </div>
       )}
       <p className="mt-5 text-sm text-steel">{data.walkLine}</p>
@@ -533,7 +534,7 @@ function FatalityStage({ id, progress, playing }: { id: string; progress: number
   return (
     <video
       ref={ref}
-      src={`${src}?v=suplex1`}
+      src={`${src}?v=file2`}
       muted
       playsInline
       preload="auto"

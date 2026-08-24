@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=walkpunch1";
+const V = "v=fixpass3";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -53,9 +53,9 @@ const PATHS = {
       hurt: "/sprites/manager-idle.png",
     },
     hr: {
-      idle: "/sprites/hr-idle.png?v=pat1",
-      attack: "/sprites/hr-attack.png?v=pat1",
-      hurt: "/sprites/hr-hurt.png?v=pat1",
+      idle: "/sprites/hr-idle.png?v=pat2",
+      attack: "/sprites/hr-attack.png?v=pat2",
+      hurt: "/sprites/hr-hurt.png?v=pat2",
     },
     gym: {
       idle: "/sprites/gym-idle.png",
@@ -64,7 +64,7 @@ const PATHS = {
     },
     boss: {
       idle: "/sprites/boss-idle.png",
-      attack: "/sprites/boss-attack.png?v=walkpunch1",
+      attack: "/sprites/boss-attack.png?v=rear1",
       hurt: "/sprites/boss-stun.png",
     },
     cops: {
@@ -103,7 +103,7 @@ const PATHS = {
     manager: "/walks/walk-manager.jpg",
     hr: "/walks/walk-hr.jpg?v=pat1",
     gym: "/walks/walk-gym.jpg",
-    boss: "/walks/walk-boss.jpg",
+    boss: "/walks/walk-boss.jpg?v=rich1",
     cops: "/walks/walk-cops.jpg",
   },
   fatality: {
@@ -112,7 +112,7 @@ const PATHS = {
     baker: "/fatalities/baker.jpg?v=hero2",
     barista: "/fatalities/barista.jpg?v=hero2",
     manager: "/fatalities/manager.jpg?v=hero2",
-    hr: "/fatalities/hr.jpg?v=pat1",
+    hr: "/fatalities/hr.jpg?v=file2",
     gym: "/fatalities/gym.jpg?v=hero2",
     boss: "/fatalities/boss.jpg?v=suplex1",
     cops: "/fatalities/cops.jpg?v=hero2",
