@@ -11,21 +11,14 @@ import { PLAYER_MAX_HP } from "@/game/content/roster";
 
 function sceneFor(phase: Phase, bossId: string): MusicScene {
   if (phase === "title" || phase === "howto") return "title";
-  if (phase === "interlude") return "walk";
   if (phase === "victory") return "victory";
   if (phase === "defeat") return "defeat";
-  if (
-    bossId === "roommate" ||
-    bossId === "leaf" ||
-    bossId === "baker" ||
-    bossId === "barista" ||
-    bossId === "manager" ||
-    bossId === "gym" ||
-    bossId === "boss"
-  ) {
-    return bossId;
-  }
-  return "walk";
+  const bosses = ["roommate", "leaf", "baker", "barista", "manager", "gym", "boss"] as const;
+  const id = bosses.find((b) => b === bossId);
+  if (!id) return "walk";
+  if (phase === "interlude") return `${id}V`;
+  if (phase === "finisher") return `${id}F`;
+  return id;
 }
 
 export function GameApp() {

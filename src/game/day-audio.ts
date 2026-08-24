@@ -8,6 +8,20 @@ export type MusicScene =
   | "manager"
   | "gym"
   | "boss"
+  | "roommateV"
+  | "leafV"
+  | "bakerV"
+  | "baristaV"
+  | "managerV"
+  | "gymV"
+  | "bossV"
+  | "roommateF"
+  | "leafF"
+  | "bakerF"
+  | "baristaF"
+  | "managerF"
+  | "gymF"
+  | "bossF"
   | "victory"
   | "defeat"
   | "dawn"
@@ -51,22 +65,38 @@ function asset(path: string) {
   return `${base}${path}`;
 }
 
+const V = "v=chant3";
+
 const BED_URL: Record<MusicScene, string> = {
-  title: asset("/music/title.mp3?v=chant1"),
-  walk: asset("/music/walk.mp3?v=chant1"),
-  dawn: asset("/music/walk.mp3?v=chant1"),
-  roommate: asset("/music/roommate.mp3?v=chant1"),
-  leaf: asset("/music/leaf.mp3?v=chant1"),
-  baker: asset("/music/baker.mp3?v=chant1"),
-  barista: asset("/music/barista.mp3?v=chant1"),
-  manager: asset("/music/manager.mp3?v=chant1"),
-  gym: asset("/music/gym.mp3?v=chant1"),
-  boss: asset("/music/boss.mp3?v=chant1"),
-  morning: asset("/music/roommate.mp3?v=chant1"),
-  midday: asset("/music/manager.mp3?v=chant1"),
-  finale: asset("/music/boss.mp3?v=chant1"),
-  victory: asset("/music/victory.mp3?v=chant1"),
-  defeat: asset("/music/defeat.mp3?v=chant1"),
+  title: asset(`/music/title.mp3?${V}`),
+  walk: asset(`/music/walk.mp3?${V}`),
+  dawn: asset(`/music/walk.mp3?${V}`),
+  roommate: asset(`/music/roommate-chorus.mp3?${V}`),
+  leaf: asset(`/music/leaf-chorus.mp3?${V}`),
+  baker: asset(`/music/baker-chorus.mp3?${V}`),
+  barista: asset(`/music/barista-chorus.mp3?${V}`),
+  manager: asset(`/music/manager-chorus.mp3?${V}`),
+  gym: asset(`/music/gym-chorus.mp3?${V}`),
+  boss: asset(`/music/boss-chorus.mp3?${V}`),
+  roommateV: asset(`/music/roommate-verse.mp3?${V}`),
+  leafV: asset(`/music/leaf-verse.mp3?${V}`),
+  bakerV: asset(`/music/baker-verse.mp3?${V}`),
+  baristaV: asset(`/music/barista-verse.mp3?${V}`),
+  managerV: asset(`/music/manager-verse.mp3?${V}`),
+  gymV: asset(`/music/gym-verse.mp3?${V}`),
+  bossV: asset(`/music/boss-verse.mp3?${V}`),
+  roommateF: asset(`/music/roommate-fatality.mp3?${V}`),
+  leafF: asset(`/music/leaf-fatality.mp3?${V}`),
+  bakerF: asset(`/music/baker-fatality.mp3?${V}`),
+  baristaF: asset(`/music/barista-fatality.mp3?${V}`),
+  managerF: asset(`/music/manager-fatality.mp3?${V}`),
+  gymF: asset(`/music/gym-fatality.mp3?${V}`),
+  bossF: asset(`/music/boss-fatality.mp3?${V}`),
+  morning: asset(`/music/roommate-chorus.mp3?${V}`),
+  midday: asset(`/music/manager-chorus.mp3?${V}`),
+  finale: asset(`/music/boss-chorus.mp3?${V}`),
+  victory: asset(`/music/victory.mp3?${V}`),
+  defeat: asset(`/music/defeat.mp3?${V}`),
 };
 
 type BedVoice = {
@@ -112,7 +142,7 @@ export function createAudio(): GameAudio {
     let b = beds.get(url);
     if (b) return b;
     const el = new Audio(url);
-    el.loop = true;
+    el.loop = !url.includes("-verse") && !url.includes("-fatality") && !url.includes("victory") && !url.includes("defeat");
     el.preload = "auto";
     el.crossOrigin = "anonymous";
     const src = c.createMediaElementSource(el);
@@ -199,7 +229,8 @@ export function createAudio(): GameAudio {
         return { bpm: 96, drums: 0.45, drive: 0.2, bright: 0.55 };
       case "defeat":
         return { bpm: 70, drums: 0.15, drive: 0.08, bright: 0.12 };
-    }
+      default:
+        return { bpm: 108, drums: 0.7, drive: 0.3, bright: 0.4 };
   }
 
   function beep(
