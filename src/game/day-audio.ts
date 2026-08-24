@@ -73,20 +73,20 @@ function asset(path: string) {
   return `${base}${path}`;
 }
 
-const V = "v=rhyme1";
+const V = "v=hardchorus1";
 
 const BED_URL: Record<MusicScene, string> = {
   title: asset(`/music/title.mp3?${V}`),
   walk: asset(`/music/walk.mp3?${V}`),
   dawn: asset(`/music/walk.mp3?${V}`),
-  roommate: asset(`/music/roommate-chorus.mp3?${V}`),
-  leaf: asset(`/music/leaf-chorus.mp3?${V}`),
-  baker: asset(`/music/baker-chorus.mp3?${V}`),
-  barista: asset(`/music/barista-chorus.mp3?${V}`),
-  manager: asset(`/music/manager-chorus.mp3?${V}`),
-  hr: asset(`/music/manager-chorus.mp3?${V}`),
-  gym: asset(`/music/gym-chorus.mp3?${V}`),
-  boss: asset(`/music/boss-chorus.mp3?${V}`),
+  roommate: asset(`/music/roommate.mp3?${V}`),
+  leaf: asset(`/music/leaf.mp3?${V}`),
+  baker: asset(`/music/baker.mp3?${V}`),
+  barista: asset(`/music/barista.mp3?${V}`),
+  manager: asset(`/music/manager.mp3?${V}`),
+  hr: asset(`/music/manager.mp3?${V}`),
+  gym: asset(`/music/gym.mp3?${V}`),
+  boss: asset(`/music/boss.mp3?${V}`),
   cops: asset(`/music/cops.mp3?${V}`),
   roommateV: asset(`/music/roommate-verse.mp3?${V}`),
   leafV: asset(`/music/leaf-verse.mp3?${V}`),
@@ -106,9 +106,9 @@ const BED_URL: Record<MusicScene, string> = {
   gymF: asset(`/music/gym-fatality.mp3?${V}`),
   bossF: asset(`/music/boss-fatality.mp3?${V}`),
   copsF: asset(`/music/cops.mp3?${V}`),
-  morning: asset(`/music/roommate-chorus.mp3?${V}`),
-  midday: asset(`/music/manager-chorus.mp3?${V}`),
-  finale: asset(`/music/boss-chorus.mp3?${V}`),
+  morning: asset(`/music/morning.mp3?${V}`),
+  midday: asset(`/music/midday.mp3?${V}`),
+  finale: asset(`/music/finale.mp3?${V}`),
   victory: asset(`/music/victory.mp3?${V}`),
   defeat: asset(`/music/defeat.mp3?${V}`),
 };

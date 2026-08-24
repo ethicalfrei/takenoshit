@@ -88,10 +88,10 @@ function drawWalk(
 
   const frames = assets.walk;
   if (frames.length) {
-    const fi = Math.floor(vm.walkT * 10) % frames.length;
-    const bob = 1 + Math.sin(vm.walkT * 21) * 0.045;
+    const fps = 8;
+    const fi = Math.floor(vm.walkT * fps) % frames.length;
     const x = w * 0.36;
-    sprite(ctx, frames[fi], x, h * 0.96, h * 0.44, { sy: bob, sx: 1 / bob });
+    sprite(ctx, frames[fi], x, h * 0.96, h * 0.44);
   }
 }
 
