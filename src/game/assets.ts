@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=oneface1";
+const V = "v=hortonqa1";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
