@@ -56,11 +56,16 @@ export function GameApp() {
         setHud(simRef.current.hud());
       }
     });
+    const kickAudio = () => audioRef.current?.unlock();
+    kickAudio();
+    const evs: (keyof WindowEventMap)[] = ["pointerdown", "touchstart", "keydown", "click"];
+    evs.forEach((e) => window.addEventListener(e, kickAudio, { capture: true }));
     return () => {
       alive = false;
       audioRef.current?.onBedEnded(null);
       input.detach();
       audioRef.current?.dispose();
+      evs.forEach((e) => window.removeEventListener(e, kickAudio, true));
     };
   }, []);
 
@@ -207,7 +212,15 @@ export function GameApp() {
         aria-label="Take No Shit fight arena"
       />
 
-      {hud.phase === "title" && <TitleOverlay highScore={hud.highScore} ready={assetsReady} onStart={start} caption={caption} />}
+      {hud.phase === "title" && (
+        <TitleOverlay
+          highScore={hud.highScore}
+          ready={assetsReady}
+          onStart={start}
+          onUnlock={unlock}
+          caption={caption}
+        />
+      )}
       {hud.phase === "howto" && <HowToOverlay onNext={afterHowTo} />}
       {hud.phase === "interlude" && (
         <InterludeOverlay data={interlude} walkT={hud.walkT} onFight={toFight} />
@@ -303,15 +316,17 @@ function TitleOverlay({
   highScore,
   ready,
   onStart,
+  onUnlock,
   caption,
 }: {
   highScore: number;
   ready: boolean;
   onStart: () => void;
+  onUnlock: () => void;
   caption: string;
 }) {
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col">
+    <div className="absolute inset-0 flex flex-col" onPointerDown={onUnlock}>
       <div className="px-6 pt-16">
         <p className="font-sans text-xs tracking-[0.22em] text-cream-dim uppercase">A day of boss fights</p>
         <h1 className="mt-3 font-display text-7xl leading-[0.82] tracking-tight text-cream drop-shadow-[0_2px_12px_rgba(20,14,12,0.85)]">
@@ -332,7 +347,7 @@ function TitleOverlay({
           onClick={onStart}
           className="h-14 w-full rounded-xl bg-cream text-lg font-semibold text-ink hover:bg-cream-dim disabled:opacity-50"
         >
-          {ready ? TITLE.cta : "Lacing gloves…"}
+          {ready ? TITLE.cta : "wait bitch"}
         </button>
         <p className="mt-3 text-center text-xs text-steel">Swipe to dodge · Tap a half to punch</p>
       </div>

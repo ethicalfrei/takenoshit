@@ -492,7 +492,12 @@ export function createAudio(): GameAudio {
       const c = ensure();
       if (c.state === "suspended") void c.resume();
       startClock();
-      fadeToBed(BED_URL[scene]);
+      if (!currentBed) {
+        fadeToBed(BED_URL[scene]);
+        return;
+      }
+      const b = beds.get(currentBed);
+      if (b && b.el.paused) void b.el.play().catch(() => {});
     },
     resume() {
       if (ctx?.state === "suspended") void ctx.resume();
