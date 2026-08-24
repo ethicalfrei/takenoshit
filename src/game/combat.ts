@@ -1,0 +1,708 @@
+import { PLAYER_MAX_HP, ROSTER, STAR_HITS_FOR_STUN, type AttackPattern, type BossDef, type Guard, type Lane } from "./content/roster";
+import type { FrameInput } from "./input";
+import { Juice } from "./juice";
+import type { SfxName } from "./day-audio";
+
+export type Phase =
+  | "title"
+  | "howto"
+  | "interlude"
+  | "countdown"
+  | "fight"
+  | "finisher"
+  | "ko"
+  | "defeat"
+  | "victory";
+
+export type PlayerPose = "idle" | "punch" | "dodgeL" | "dodgeR" | "duck" | "hurt" | "grab";
+export type BossPose = "idle" | "attack" | "hurt" | "stun" | "ko";
+
+export type Projectile = {
+  kind: string;
+  lane: Lane;
+  t: number;
+  life: number;
+  damage: number;
+};
+
+export type Cinematic = { kind: "finisher"; t: number; id: BossDef["id"] };
+
+export type HudState = {
+  phase: Phase;
+  paused: boolean;
+  boss: BossDef;
+  bossIndex: number;
+  playerHp: number;
+  bossHp: number;
+  stun: number;
+  stars: number;
+  combo: number;
+  score: number;
+  highScore: number;
+  line: string;
+  cue: string;
+  telegraphLane: Lane | null;
+  countdown: number | null;
+  mash: { count: number; goal: number; t: number; prompt: string } | null;
+  muted: boolean;
+  caption: string;
+  walkT: number;
+  punchSide: "L" | "R" | null;
+  finisherPlay: boolean;
+};
+
+export type ViewModel = HudState & {
+  playerPose: PlayerPose;
+  bossPose: BossPose;
+  playerX: number;
+  playerSquash: number;
+  bossX: number;
+  bossRot: number;
+  bossScaleX: number;
+  bossScaleY: number;
+  guard: Guard;
+  projectiles: Projectile[];
+  cinematic: Cinematic | null;
+  time: number;
+  juice: Juice;
+  intro: string;
+};
+
+type BossAI =
+  | { kind: "idle"; t: number }
+  | { kind: "telegraph"; t: number; pattern: AttackPattern }
+  | { kind: "attack"; t: number; pattern: AttackPattern; connected: boolean }
+  | { kind: "recover"; t: number; pattern: AttackPattern }
+  | { kind: "hurt"; t: number }
+  | { kind: "stunned"; t: number };
+
+function pick<T>(arr: T[]) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function isSafe(lane: Lane, pose: PlayerPose) {
+  if (pose === "hurt") return false;
+  if (lane === "high") return pose === "duck";
+  if (lane === "left") return pose === "dodgeL";
+  if (lane === "right") return pose === "dodgeR";
+  return pose === "dodgeL" || pose === "dodgeR" || pose === "duck";
+}
+
+export class FightSim {
+  phase: Phase = "title";
+  paused = false;
+  bossIndex = 0;
+  playerHp = PLAYER_MAX_HP;
+  bossHp = ROSTER[0].hp;
+  stun = 0;
+  stars = 0;
+  combo = 0;
+  score = 0;
+  highScore = 0;
+  line = "";
+  cue = "";
+  caption = "";
+  muted = false;
+  time = 0;
+  juice = new Juice();
+  cinematic: Cinematic | null = null;
+  mash = { count: 0, goal: 12, t: 0, prompt: "" };
+  walkT = 0;
+
+  playerPose: PlayerPose = "idle";
+  playerPoseT = 0;
+  playerX = 0;
+  invuln = 0;
+  punchSide: "L" | "R" | null = null;
+  starPunch = false;
+
+  bossPose: BossPose = "idle";
+  bossX = 0;
+  bossRot = 0;
+  bossScaleX = 1;
+  bossScaleY = 1;
+  guard: Guard = "left";
+  guardT = 0;
+  ai: BossAI = { kind: "idle", t: 0.4 };
+  lastPattern = "";
+  tauntT = 0;
+  countdown = 3;
+  countdownT = 0;
+  koT = 0;
+  projectiles: Projectile[] = [];
+  perfectDodge = false;
+
+  onSfx: (name: SfxName, opts?: { rate?: number }) => void = () => {};
+  onVibrate: (ms: number) => void = () => {};
+
+  get boss(): BossDef {
+    return ROSTER[this.bossIndex];
+  }
+
+  startDay() {
+    this.bossIndex = 0;
+    this.score = 0;
+    this.combo = 0;
+    this.phase = "howto";
+  }
+
+  enterInterlude() {
+    this.phase = "interlude";
+    this.playerHp = PLAYER_MAX_HP;
+    this.walkT = 0;
+    this.resetFight();
+  }
+
+  beginFight() {
+    this.resetFight();
+    this.phase = "countdown";
+    this.countdown = 3;
+    this.countdownT = 0;
+    this.line = this.boss.introLine;
+    this.onSfx("bell");
+  }
+
+  retryFight() {
+    this.playerHp = PLAYER_MAX_HP;
+    this.resetFight();
+    this.beginFight();
+  }
+
+  private resetFight() {
+    this.bossHp = this.boss.hp;
+    this.stun = 0;
+    this.stars = 0;
+    this.combo = 0;
+    this.playerPose = "idle";
+    this.playerPoseT = 0;
+    this.playerX = 0;
+    this.invuln = 0;
+    this.bossPose = "idle";
+    this.bossX = 0;
+    this.bossRot = 0;
+    this.bossScaleX = 1;
+    this.bossScaleY = 1;
+    this.guard = "left";
+    this.guardT = 0;
+    this.ai = { kind: "idle", t: 0.55 };
+    this.projectiles = [];
+    this.cinematic = null;
+    this.perfectDodge = false;
+    this.starPunch = false;
+    this.cue = "";
+    this.juice.trauma = 0;
+    this.juice.hitstop = 0;
+  }
+
+  update(dt: number, input: FrameInput) {
+    this.time += dt;
+    if (input.pausePressed && (this.phase === "fight" || this.phase === "countdown" || this.phase === "finisher")) {
+      this.paused = !this.paused;
+    }
+    if (this.paused) return;
+
+    if (this.phase === "interlude") {
+      this.walkT += dt;
+      this.juice.update(dt);
+      return;
+    }
+
+    if (this.phase === "countdown") {
+      this.animateIdle(dt);
+      this.countdownT += dt;
+      if (this.countdownT >= 0.7) {
+        this.countdownT = 0;
+        this.countdown -= 1;
+        if (this.countdown < 0) {
+          this.phase = "fight";
+          this.line = this.boss.introLine;
+        } else if (this.countdown === 0) {
+          this.onSfx("bell");
+        } else {
+          this.onSfx("ui");
+        }
+      }
+      return;
+    }
+
+    if (this.phase === "ko") {
+      this.koT += dt;
+      this.bossPose = "ko";
+      this.playerPose = "idle";
+      this.bossRot += dt * 0.4;
+      this.bossScaleY = Math.max(0.22, this.bossScaleY - dt * 0.15);
+      this.bossX += (0.4 - this.bossX) * 0.08;
+      if (this.koT > 2.1) {
+        if (this.bossIndex >= ROSTER.length - 1) {
+          this.phase = "victory";
+          if (this.score > this.highScore) this.highScore = this.score;
+        } else {
+          this.bossIndex += 1;
+          this.enterInterlude();
+        }
+      }
+      const freeze = this.juice.update(dt);
+      if (freeze === "frozen") return;
+      return;
+    }
+
+    if (this.phase === "finisher") {
+      this.tickFinisher(dt, input);
+      return;
+    }
+
+    if (this.phase !== "fight") {
+      this.animateIdle(dt);
+      this.juice.update(dt);
+      return;
+    }
+
+    if (this.juice.update(dt) === "frozen") {
+      this.playerPoseT += dt;
+      return;
+    }
+
+    this.invuln = Math.max(0, this.invuln - dt);
+    this.guardT += dt;
+    if (this.guardT > this.boss.guardCycleMs / 1000) {
+      this.guardT = 0;
+      this.guard = this.guard === "left" ? "right" : this.guard === "right" ? "none" : "left";
+    }
+
+    this.tauntT += dt;
+    if (this.tauntT > 4.5 && this.ai.kind === "idle") {
+      this.tauntT = 0;
+      this.line = pick(this.boss.tauntLines);
+    }
+
+    this.tickPlayer(dt, input);
+    this.tickBoss(dt);
+    this.tickProjectiles(dt);
+    this.spring(dt);
+  }
+
+  private animateIdle(dt: number) {
+    this.playerPoseT += dt;
+    this.juice.update(dt);
+  }
+
+  private spring(dt: number) {
+    this.playerX += (0 - this.playerX) * (1 - Math.exp(- (this.playerPose.startsWith("dodge") ? 2 : 10) * dt));
+    this.bossX += (0 - this.bossX) * (1 - Math.exp(-8 * dt));
+    this.bossRot += (0 - this.bossRot) * (1 - Math.exp(-6 * dt));
+    this.bossScaleX += (1 - this.bossScaleX) * (1 - Math.exp(-10 * dt));
+    this.bossScaleY += (1 - this.bossScaleY) * (1 - Math.exp(-10 * dt));
+  }
+
+  private setPlayer(pose: PlayerPose, dur: number) {
+    this.playerPose = pose;
+    this.playerPoseT = 0;
+    if (pose === "dodgeL") this.playerX = -1;
+    if (pose === "dodgeR") this.playerX = 1;
+    if (pose === "idle") this.punchSide = null;
+    void dur;
+  }
+
+  private tickPlayer(dt: number, input: FrameInput) {
+    this.playerPoseT += dt;
+    const busy = this.playerPose === "hurt" || this.playerPose === "grab";
+    const poseLock =
+      (this.playerPose === "punch" && this.playerPoseT < 0.22) ||
+      (this.playerPose === "dodgeL" && this.playerPoseT < 0.28) ||
+      (this.playerPose === "dodgeR" && this.playerPoseT < 0.28) ||
+      (this.playerPose === "duck" && this.playerPoseT < 0.3) ||
+      (this.playerPose === "hurt" && this.playerPoseT < 0.42);
+
+    if (!busy && !poseLock) {
+      if (input.dodgeLPressed) {
+        this.setPlayer("dodgeL", 0.28);
+        this.invuln = 0.3;
+        this.onSfx("dodge");
+        if (this.ai.kind === "telegraph" && this.ai.pattern.lane === "left") this.perfectDodge = true;
+      } else if (input.dodgeRPressed) {
+        this.setPlayer("dodgeR", 0.28);
+        this.invuln = 0.3;
+        this.onSfx("dodge");
+        if (this.ai.kind === "telegraph" && this.ai.pattern.lane === "right") this.perfectDodge = true;
+      } else if (input.duckPressed) {
+        this.setPlayer("duck", 0.3);
+        this.invuln = 0.32;
+        this.onSfx("dodge");
+        if (this.ai.kind === "telegraph" && this.ai.pattern.lane === "high") this.perfectDodge = true;
+      } else if (input.punchLPressed || input.punchRPressed) {
+        this.tryPunch(input.punchLPressed ? "L" : "R");
+      } else if (input.grabPressed && this.ai.kind === "stunned") {
+        this.startFinisher();
+      } else if (this.playerPoseT > 0.32) {
+        this.playerPose = "idle";
+      }
+    } else if (this.playerPose === "hurt" && this.playerPoseT >= 0.42) {
+      this.playerPose = "idle";
+    }
+    if (this.playerPose === "dodgeL" && input.dodgeL) this.invuln = Math.max(this.invuln, 0.08);
+    if (this.playerPose === "dodgeR" && input.dodgeR) this.invuln = Math.max(this.invuln, 0.08);
+    if (this.playerPose === "duck" && input.duck) this.invuln = Math.max(this.invuln, 0.08);
+
+    if (this.ai.kind === "stunned" && this.playerPose !== "hurt") {
+      this.cue = "GRAB";
+    }
+  }
+
+  private tryPunch(side: "L" | "R") {
+    this.punchSide = side;
+    this.setPlayer("punch", 0.22);
+    this.onSfx("punch");
+    const guarded = (side === "L" && this.guard === "left") || (side === "R" && this.guard === "right");
+    const windowOpen =
+      this.ai.kind === "idle" ||
+      this.ai.kind === "recover" ||
+      this.ai.kind === "hurt" ||
+      (this.ai.kind === "telegraph" && this.ai.t > this.ai.pattern.telegraphMs / 1000 * 0.55);
+
+    if (this.ai.kind === "stunned") {
+      this.hitBoss(side === "L" ? 6 : 6, false);
+      return;
+    }
+    if (!windowOpen) {
+      this.juice.float(180, 240, "WHIFF", "#cfc4b6");
+      return;
+    }
+    if (guarded) {
+      this.onSfx("block");
+      this.juice.burst(180, 260, 8, "#cfc4b6", 90);
+      this.juice.float(200, 250, "CLANG", "#9a938c");
+      this.combo = 0;
+      this.line = "DENIED.";
+      return;
+    }
+    const perfect = this.perfectDodge;
+    this.perfectDodge = false;
+    if (perfect) this.stars = Math.min(3, this.stars + 1);
+    const star = this.stars >= STAR_HITS_FOR_STUN || this.starPunch;
+    const dmg = star ? 18 : perfect ? 12 : 8;
+    this.hitBoss(dmg, star);
+    if (star) {
+      this.stars = 0;
+      this.starPunch = false;
+    }
+  }
+
+  private hitBoss(dmg: number, star: boolean) {
+    this.bossHp = Math.max(0, this.bossHp - dmg);
+    this.stun += dmg;
+    this.combo += 1;
+    this.score += dmg * (1 + this.combo * 0.15) * (star ? 2 : 1);
+    this.bossPose = "hurt";
+    this.bossX = 0.18;
+    this.bossScaleX = 1.12;
+    this.bossScaleY = 0.9;
+    this.juice.freeze(star ? 0.09 : 0.05);
+    this.juice.addTrauma(star ? 0.55 : 0.32);
+    this.juice.burst(180, 250, star ? 22 : 12, this.boss.palette.glow, star ? 260 : 160);
+    this.juice.float(200, 230, star ? "STAR" : `${Math.round(dmg)}`, star ? "#d4a574" : "#f3ebe1");
+    this.juice.screenFlash("#ffffff", star ? 0.4 : 0.18);
+    this.onSfx("punchHit", { rate: 1 + Math.min(0.2, this.combo * 0.02) });
+    this.onVibrate(star ? 40 : 18);
+    this.line = pick(this.boss.hurtLines);
+    this.ai = { kind: "hurt", t: star ? 0.38 : 0.22 };
+
+    if (this.bossHp <= 0) {
+      this.knockout();
+      return;
+    }
+    if (this.stun >= this.boss.stunThreshold || this.stars >= STAR_HITS_FOR_STUN) {
+      this.stunBoss();
+    }
+  }
+
+  private stunBoss() {
+    this.stun = this.boss.stunThreshold;
+    this.ai = { kind: "stunned", t: 2.4 };
+    this.bossPose = "stun";
+    this.cue = "GRAB";
+    this.line = "WOBBLING. Grab them.";
+    this.onSfx("stun");
+    this.juice.addTrauma(0.4);
+    this.juice.burst(180, 240, 18, "#d4a574", 120);
+    this.onVibrate(30);
+  }
+
+  private startFinisher() {
+    this.phase = "finisher";
+    this.playerPose = "grab";
+    this.mash = {
+      count: 0,
+      goal: this.boss.finisher.mashGoal,
+      t: 0,
+      prompt: this.boss.finisher.prompt,
+    };
+    this.line = this.boss.finisher.prompt;
+    this.cue = "";
+    this.onSfx("grab");
+    this.juice.addTrauma(0.3);
+  }
+
+  private tickFinisher(dt: number, input: FrameInput) {
+    if (this.cinematic) {
+      this.cinematic.t += dt;
+      this.runCinematic(dt);
+      if (this.cinematic.t > 6.2) {
+        this.cinematic = null;
+        this.knockout();
+      }
+      this.juice.update(dt);
+      return;
+    }
+    this.mash.t += dt;
+    const taps = Math.max(input.mashCount, input.mash ? 1 : 0);
+    if (taps > 0) {
+      this.mash.count += taps;
+      this.onSfx("mash", { rate: 1 + this.mash.count * 0.03 });
+      this.juice.addTrauma(0.12);
+      this.juice.burst(180, 280, 6, "#c44536", 140);
+      this.bossYPulse();
+      this.onVibrate(12);
+    }
+    if (this.mash.count >= this.mash.goal) {
+      this.score += 500 + this.bossIndex * 250;
+      this.line = this.boss.finisher.successLine;
+      this.cinematic = { kind: "finisher", t: 0, id: this.boss.id };
+      this.onSfx("impact");
+      this.juice.freeze(0.12);
+      this.juice.addTrauma(0.85);
+      this.juice.screenFlash("#c44536", 0.5);
+      return;
+    }
+    if (this.mash.t > this.boss.finisher.windowMs / 1000) {
+      this.phase = "fight";
+      this.ai = { kind: "idle", t: 0.3 };
+      this.stun = 0;
+      this.stars = 0;
+      this.bossPose = "idle";
+      this.playerPose = "hurt";
+      this.playerPoseT = 0;
+      this.playerHp = Math.max(1, this.playerHp - 10);
+      this.line = "They wriggled out.";
+      this.onSfx("hurt");
+    }
+    this.juice.update(dt);
+  }
+
+  private bossYPulse() {
+    this.bossScaleY = 0.78;
+    this.bossScaleX = 1.18;
+    this.bossRot = (Math.random() - 0.5) * 0.4;
+  }
+
+  private runCinematic(dt: number) {
+    const t = this.cinematic?.t ?? 0;
+    const id = this.cinematic?.id;
+    this.playerPose = "grab";
+    if (id === "boss") {
+      this.bossRot = t * 6.2;
+      this.bossScaleY = Math.max(0.08, 1 - t * 0.7);
+      this.bossScaleX = 1 + Math.sin(t * 14) * 0.2;
+      if (t > 1.2) {
+        this.bossScaleX *= Math.max(0, 1 - (t - 1.2) * 2);
+        this.bossScaleY *= Math.max(0, 1 - (t - 1.2) * 2);
+      }
+    } else {
+      this.bossYPulse();
+      this.bossX = Math.sin(t * 28) * 0.25;
+      this.bossRot = Math.sin(t * 22) * 0.5;
+      this.bossScaleY = 0.7 + Math.sin(t * 30) * 0.12;
+    }
+    if (Math.random() < 0.4) this.juice.burst(180, 260, 4, "#c44536", 200);
+    void dt;
+  }
+
+  private knockout() {
+    this.phase = "ko";
+    this.koT = 0;
+    this.bossHp = 0;
+    this.bossPose = "ko";
+    this.playerPose = "idle";
+    this.bossScaleY = 0.45;
+    this.bossRot = 1.15;
+    this.bossX = 0.35;
+    this.line = this.boss.koLine;
+    this.cue = "";
+    this.onSfx("ko");
+    this.juice.addTrauma(0.7);
+    this.juice.burst(180, 260, 28, this.boss.palette.glow, 280);
+    this.score += 200 + Math.floor(this.playerHp * 2);
+    if (this.score > this.highScore) this.highScore = this.score;
+  }
+
+  private tickBoss(dt: number) {
+    const ai = this.ai;
+    ai.t -= dt;
+
+    if (ai.kind === "idle") {
+      this.bossPose = "idle";
+      this.cue = "";
+      if (ai.t <= 0) this.windUp();
+      return;
+    }
+    if (ai.kind === "telegraph") {
+      this.bossPose = "idle";
+      this.bossScaleX = 1.06;
+      this.cue = ai.pattern.telegraphCue;
+      if (ai.t <= 0) this.launch(ai.pattern);
+      return;
+    }
+    if (ai.kind === "attack") {
+      this.bossPose = "attack";
+      if (!ai.connected && ai.t < ai.pattern.activeMs / 1000 * 0.55) {
+        this.tryConnect(ai.pattern, ai);
+      }
+      if (ai.t <= 0) {
+        this.ai = { kind: "recover", t: ai.pattern.recoverMs / 1000, pattern: ai.pattern };
+      }
+      return;
+    }
+    if (ai.kind === "recover") {
+      this.bossPose = "idle";
+      this.cue = "";
+      if (ai.t <= 0) this.ai = { kind: "idle", t: 0.28 + Math.random() * 0.35 };
+      return;
+    }
+    if (ai.kind === "hurt") {
+      this.bossPose = "hurt";
+      if (ai.t <= 0) this.ai = { kind: "idle", t: 0.18 };
+      return;
+    }
+    if (ai.kind === "stunned") {
+      this.bossPose = "stun";
+      this.bossRot = Math.sin(this.time * 8) * 0.12;
+      if (ai.t <= 0) {
+        this.stun = 0;
+        this.stars = 0;
+        this.cue = "";
+        this.ai = { kind: "idle", t: 0.2 };
+      }
+    }
+  }
+
+  private windUp() {
+    const pool = this.boss.patterns.filter((p) => p.id !== this.lastPattern);
+    const pattern = pick(pool.length ? pool : this.boss.patterns);
+    this.lastPattern = pattern.id;
+    this.ai = { kind: "telegraph", t: pattern.telegraphMs / 1000, pattern };
+    this.cue = pattern.telegraphCue;
+    this.onSfx("whoosh", { rate: 0.85 });
+  }
+
+  private launch(pattern: AttackPattern) {
+    this.ai = { kind: "attack", t: pattern.activeMs / 1000, pattern, connected: false };
+    this.bossPose = "attack";
+    this.bossScaleY = 1.12;
+    this.onSfx(pattern.kind === "projectile" ? "projectile" : "whoosh");
+    if (pattern.kind === "projectile" && pattern.projectile) {
+      this.projectiles.push({
+        kind: pattern.projectile,
+        lane: pattern.lane,
+        t: 0,
+        life: 0.55 + this.bossIndex * 0.04,
+        damage: pattern.damage,
+      });
+    }
+  }
+
+  private tryConnect(pattern: AttackPattern, ai: Extract<BossAI, { kind: "attack" }>) {
+    if (pattern.kind === "projectile") return;
+    ai.connected = true;
+    if (this.invuln > 0 && isSafe(pattern.lane, this.playerPose)) {
+      this.juice.float(90, 400, "MISS", "#d4a574");
+      this.combo += 1;
+      this.score += 20;
+      this.line = "A WHIFF.";
+      return;
+    }
+    this.hitPlayer(pattern.damage);
+  }
+
+  private tickProjectiles(dt: number) {
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const p = this.projectiles[i];
+      p.t += dt;
+      if (p.t >= p.life) {
+        this.projectiles.splice(i, 1);
+        if (this.invuln > 0 && isSafe(p.lane, this.playerPose)) {
+          this.juice.float(90, 400, "MISS", "#d4a574");
+          this.combo += 1;
+          this.score += 20;
+        } else if (this.phase === "fight") {
+          this.hitPlayer(p.damage);
+        }
+      }
+    }
+  }
+
+  private hitPlayer(dmg: number) {
+    if (this.invuln > 0 && this.playerPose !== "hurt") return;
+    this.playerHp = Math.max(0, this.playerHp - dmg);
+    this.combo = 0;
+    this.stun = Math.max(0, this.stun - 6);
+    this.stars = 0;
+    this.setPlayer("hurt", 0.42);
+    this.invuln = 0.45;
+    this.juice.freeze(0.06);
+    this.juice.addTrauma(0.5);
+    this.juice.screenFlash("#c44536", 0.35);
+    this.juice.burst(180, 480, 14, "#c44536", 180);
+    this.onSfx("hurt");
+    this.onVibrate(35);
+    this.line = "That one landed.";
+    if (this.playerHp <= 0) {
+      this.phase = "defeat";
+      this.onSfx("ko");
+    }
+  }
+
+  hud(): HudState {
+    return {
+      phase: this.phase,
+      paused: this.paused,
+      boss: this.boss,
+      bossIndex: this.bossIndex,
+      playerHp: this.playerHp,
+      bossHp: this.bossHp,
+      stun: this.boss.stunThreshold ? this.stun / this.boss.stunThreshold : 0,
+      stars: this.stars,
+      combo: this.combo,
+      score: Math.floor(this.score),
+      highScore: Math.floor(this.highScore),
+      line: this.line,
+      cue: this.cue,
+      telegraphLane: this.ai.kind === "telegraph" ? this.ai.pattern.lane : this.ai.kind === "attack" ? this.ai.pattern.lane : null,
+      countdown: this.phase === "countdown" ? this.countdown : null,
+      mash: this.phase === "finisher" && !this.cinematic ? this.mash : null,
+      muted: this.muted,
+      caption: this.caption,
+      walkT: this.walkT,
+      punchSide: this.punchSide,
+      finisherPlay: this.phase === "finisher" && Boolean(this.cinematic),
+    };
+  }
+
+  view(): ViewModel {
+    return {
+      ...this.hud(),
+      playerPose: this.playerPose,
+      bossPose: this.bossPose,
+      playerX: this.playerX,
+      playerSquash: this.playerPose === "duck" ? 0.78 : this.playerPose === "hurt" ? 0.92 : 1,
+      bossX: this.bossX,
+      bossRot: this.bossRot,
+      bossScaleX: this.bossScaleX,
+      bossScaleY: this.bossScaleY,
+      guard: this.guard,
+      projectiles: this.projectiles,
+      cinematic: this.cinematic,
+      time: this.time,
+      juice: this.juice,
+      intro: this.boss.introLine,
+    };
+  }
+}
