@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=punkwalk1";
+const V = "v=horton-classic1";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -55,9 +55,9 @@ const PATHS = {
       hurt: "/sprites/manager-idle.png",
     },
     hr: {
-      idle: "/sprites/hr-idle.png?v=pat2",
-      attack: "/sprites/hr-attack.png?v=pat2",
-      hurt: "/sprites/hr-hurt.png?v=pat2",
+      idle: "/sprites/manager-idle.png",
+      attack: "/sprites/manager-attack.png",
+      hurt: "/sprites/manager-idle.png",
     },
     gym: {
       idle: "/sprites/gym-idle.png",
@@ -66,7 +66,7 @@ const PATHS = {
     },
     boss: {
       idle: "/sprites/boss-idle.png",
-      attack: "/sprites/boss-attack.png?v=rear1",
+      attack: "/sprites/boss-attack.png",
       hurt: "/sprites/boss-stun.png",
     },
     cops: {
@@ -92,7 +92,7 @@ const PATHS = {
     baker: "/sprites/bg-bakery.jpg",
     barista: "/sprites/bg-coffee.jpg",
     manager: "/sprites/bg-office.jpg",
-    hr: "/sprites/bg-hr.jpg?v=pat1",
+    hr: "/sprites/bg-office.jpg",
     gym: "/sprites/bg-gym.jpg",
     boss: "/sprites/bg-corner.jpg",
     cops: "/sprites/bg-street.jpg",
@@ -109,55 +109,30 @@ const PATHS = {
     cops: "/walks/walk-cops.jpg",
   },
   fatality: {
-    roommate: "/fatalities/roommate.jpg?v=hero2",
-    leaf: "/fatalities/leaf.jpg?v=hero2",
-    baker: "/fatalities/baker.jpg?v=hero2",
-    barista: "/fatalities/barista.jpg?v=hero2",
-    manager: "/fatalities/manager.jpg?v=hero2",
-    hr: "/fatalities/hr.jpg?v=file2",
-    gym: "/fatalities/gym.jpg?v=hero2",
-    boss: "/fatalities/boss.jpg?v=suplex1",
-    cops: "/fatalities/cops.jpg?v=hero2",
+    roommate: "/sprites/fatality-roommate.png",
+    leaf: "/sprites/fatality-leaf.png",
+    baker: "/sprites/fatality-baker.png",
+    barista: "/sprites/fatality-barista.png",
+    manager: "/sprites/fatality-manager.png",
+    hr: "/sprites/fatality-hr.png",
+    gym: "/sprites/fatality-gym.png",
+    boss: "/sprites/fatality-boss.png",
+    cops: "/sprites/fatality-cops.png",
   },
 };
 
-export const FATALITY_VID: Record<string, string> = {
-  roommate: asset("/fatalities/roommate.mp4"),
-  leaf: asset("/fatalities/leaf.mp4"),
-  baker: asset("/fatalities/baker.mp4"),
-  barista: asset("/fatalities/barista.mp4"),
-  manager: asset("/fatalities/manager.mp4"),
-  hr: asset("/fatalities/hr.mp4"),
-  gym: asset("/fatalities/gym.mp4"),
-  boss: asset("/fatalities/boss.mp4"),
-  cops: asset("/fatalities/cops.mp4"),
-};
-
-function placeholder() {
-  const c = document.createElement("canvas");
-  c.width = 16;
-  c.height = 16;
-  const g = c.getContext("2d");
-  if (g) {
-    g.fillStyle = "#c45c26";
-    g.fillRect(0, 0, 16, 16);
-  }
-  const img = new Image();
-  img.src = c.toDataURL();
-  return img;
-}
-
-function loadImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve) => {
+async function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
-    img.onerror = () => resolve(placeholder());
+    img.onerror = () => reject(new Error(`Failed to load ${src}`));
     img.src = asset(src);
   });
 }
 
-async function pool<T, R>(items: T[], n: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
+async function pool<T>(items: string[], limit: number, fn: (s: string) => Promise<T>): Promise<T[]> {
+  const out: T[] = [];
   let i = 0;
   async function worker() {
     while (i < items.length) {
@@ -165,36 +140,45 @@ async function pool<T, R>(items: T[], n: number, fn: (item: T) => Promise<R>): P
       out[idx] = await fn(items[idx]);
     }
   }
-  await Promise.all(Array.from({ length: Math.min(n, items.length) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
   return out;
 }
 
-async function loadMap(map: Record<string, string>) {
-  const entries = Object.entries(map);
-  const imgs = await pool(entries, 6, ([, p]) => loadImage(p));
-  const out: Record<string, HTMLImageElement> = {};
-  entries.forEach(([k], i) => {
-    out[k] = imgs[i];
-  });
-  return out;
+async function loadMap(m: Record<string, string>): Promise<Record<string, HTMLImageElement>> {
+  const keys = Object.keys(m);
+  const imgs = await pool(keys.map((k) => m[k]), 4, loadImage);
+  const r: Record<string, HTMLImageElement> = {};
+  keys.forEach((k, i) => (r[k] = imgs[i]));
+  return r;
 }
 
 export async function loadAssets(): Promise<SpriteBook> {
-  const playerEntries = await loadMap(PATHS.player);
+  const playerKeys = ["idle", "punch", "punch2", "punch3", "slap", "dodge", "duck", "grab"] as const;
+  const playerPaths = playerKeys.map((k) => PATHS.player[k]);
+  const playerImgs = await pool(playerPaths, 4, loadImage);
+  const player: SpriteBook["player"] = {} as any;
+  playerKeys.forEach((k, i) => (player[k] = playerImgs[i]));
+
   const walk = await pool(PATHS.walk, 4, loadImage);
-  const bosses: SpriteBook["bosses"] = {};
-  const bossIds = Object.entries(PATHS.bosses);
-  await pool(bossIds, 3, async ([id, poses]) => {
-    bosses[id] = {
-      idle: await loadImage(poses.idle),
-      attack: await loadImage(poses.attack),
-      hurt: await loadImage(poses.hurt),
-    };
-  });
+
   return {
-    player: playerEntries as SpriteBook["player"],
+    player,
     walk,
-    bosses,
+    bosses: await loadMap(
+      Object.fromEntries(
+        Object.entries(PATHS.bosses).flatMap(([id, poses]) =>
+          Object.entries(poses).map(([pose, path]) => [`${id}:${pose}`, path])
+        )
+      )
+    ).then((flat) => {
+      const r: SpriteBook["bosses"] = {} as any;
+      for (const [k, img] of Object.entries(flat)) {
+        const [id, pose] = k.split(":");
+        if (!r[id]) r[id] = {} as any;
+        r[id][pose as "idle" | "attack" | "hurt"] = img;
+      }
+      return r;
+    }),
     proj: await loadMap(PATHS.proj),
     impact: await loadImage(PATHS.impact),
     bg: await loadMap(PATHS.bg),
@@ -202,5 +186,3 @@ export async function loadAssets(): Promise<SpriteBook> {
     fatality: await loadMap(PATHS.fatality),
   };
 }
-
-export const BG_FOR: Record<string, string> = PATHS.bg;
