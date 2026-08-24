@@ -352,11 +352,11 @@ export const ROSTER: BossDef[] = [
       { id: "hat", telegraphMs: 400, activeMs: 240, recoverMs: 320, lane: "right", kind: "melee", damage: 16, telegraphCue: "wear this hat, now" },
     ],
     finisher: {
-      prompt: "SHOVE HIS HEAD UP HIS ASS",
+      prompt: "SUPLEX HIM OUT THE WINDOW",
       mashGoal: 10,
       windowMs: 5500,
-      successLine: "Ownership. He wore it.",
-      flavor: "You fold him like a bad quarterly and park his head where the sun does not synergy.",
+      successLine: "Ownership. He flew it.",
+      flavor: "You German-suplex Richard through the corner glass. Synergy meets sidewalk.",
     },
   },
   {

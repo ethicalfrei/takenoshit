@@ -114,7 +114,7 @@ const PATHS = {
     manager: "/fatalities/manager.jpg?v=hero2",
     hr: "/fatalities/hr.jpg?v=pat1",
     gym: "/fatalities/gym.jpg?v=hero2",
-    boss: "/fatalities/boss.jpg?v=hero2",
+    boss: "/fatalities/boss.jpg?v=suplex1",
     cops: "/fatalities/cops.jpg?v=hero2",
   },
 };
