@@ -49,6 +49,8 @@ export type GameAudio = {
   unlock: () => void;
   resume: () => void;
   setScene: (scene: MusicScene) => void;
+  prefetch: (scene: MusicScene) => void;
+  onBedEnded: (cb: (() => void) | null) => void;
   sfx: (name: SfxName, opts?: { rate?: number }) => void;
   setMuted: (muted: boolean) => void;
   setVolumes: (master: number, music: number, sfx: number) => void;
@@ -65,7 +67,7 @@ function asset(path: string) {
   return `${base}${path}`;
 }
 
-const V = "v=chant3";
+const V = "v=rhyme1";
 
 const BED_URL: Record<MusicScene, string> = {
   title: asset(`/music/title.mp3?${V}`),
@@ -134,6 +136,7 @@ export function createAudio(): GameAudio {
   const beds = new Map<string, BedVoice>();
   let currentBed = "";
   let bedsOn = true;
+  let endedCb: (() => void) | null = null;
 
   function ensureBed(url: string): BedVoice | null {
     const c = ctx;
@@ -151,6 +154,9 @@ export function createAudio(): GameAudio {
     gain.connect(bus);
     b = { el, gain };
     beds.set(url, b);
+    el.addEventListener("ended", () => {
+      if (currentBed === url) endedCb?.();
+    });
     el.addEventListener("error", () => {
       const fb = url.replace("-chorus.mp3", ".mp3").replace("-verse.mp3", ".mp3").replace("-fatality.mp3", ".mp3");
       if (fb !== url) fadeToBed(fb);
@@ -485,6 +491,13 @@ export function createAudio(): GameAudio {
       step = 0;
       if (ctx) stepTimer = ctx.currentTime + 0.02;
       fadeToBed(BED_URL[next]);
+    },
+    prefetch(next) {
+      ensure();
+      ensureBed(BED_URL[next]);
+    },
+    onBedEnded(cb) {
+      endedCb = cb;
     },
     sfx(name, opts) {
       if (muted) return;

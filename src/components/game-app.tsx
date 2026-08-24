@@ -49,8 +49,15 @@ export function GameApp() {
       .catch(() => {
         if (alive) setAssetsReady(true);
       });
+    audioRef.current?.onBedEnded(() => {
+      if (simRef.current.phase === "interlude") {
+        simRef.current.beginFight();
+        setHud(simRef.current.hud());
+      }
+    });
     return () => {
       alive = false;
+      audioRef.current?.onBedEnded(null);
       input.detach();
       audioRef.current?.dispose();
     };
@@ -122,6 +129,12 @@ export function GameApp() {
         if (sc !== lastScene) {
           lastScene = sc;
           audioRef.current?.setScene(sc);
+          if (next.phase === "interlude") {
+            audioRef.current?.prefetch(next.boss.id);
+          }
+        }
+        if (next.phase === "interlude" && next.walkT > 22) {
+          sim.beginFight();
         }
       }
     };
@@ -168,6 +181,7 @@ export function GameApp() {
   };
 
   const afterHowTo = () => {
+    unlock();
     audioRef.current?.sfx("ui");
     simRef.current.enterInterlude();
     setHud(simRef.current.hud());
@@ -332,10 +346,14 @@ function HowToOverlay({ onNext }: { onNext: () => void }) {
 }
 
 function InterludeOverlay({ data, walkT, onFight }: { data: Interlude; walkT: number; onFight: () => void }) {
-  const shown = Math.min(data.narrator.length, 1 + Math.floor(walkT / 1.35));
-  const showQ = walkT > data.narrator.length * 1.35 + 0.4;
+  const shown = Math.min(data.narrator.length, 1 + Math.floor(walkT / 1.15));
+  const showQ = walkT > data.narrator.length * 1.15 + 0.3;
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-end px-6 pb-10 pt-14">
+    <button
+      type="button"
+      onClick={onFight}
+      className="absolute inset-0 flex flex-col justify-end px-6 pb-10 pt-14 text-left"
+    >
       <p className="font-display text-4xl tabular-nums leading-none text-cream drop-shadow-[0_2px_8px_rgba(20,14,12,0.9)]">
         {data.clock}
       </p>
@@ -358,14 +376,7 @@ function InterludeOverlay({ data, walkT, onFight }: { data: Interlude; walkT: nu
         </div>
       )}
       <p className="mt-5 text-sm text-steel">{data.walkLine}</p>
-      <button
-        type="button"
-        onClick={onFight}
-        className="pointer-events-auto mt-6 h-14 w-full rounded-xl bg-brick text-lg font-semibold text-cream"
-      >
-        Take the fight
-      </button>
-    </div>
+    </button>
   );
 }
 
