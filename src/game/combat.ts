@@ -49,6 +49,7 @@ export type HudState = {
   caption: string;
   walkT: number;
   punchSide: "L" | "R" | null;
+  punchVariant: 0 | 1 | 2;
   finisherPlay: boolean;
   endingT: number;
 };
@@ -116,6 +117,7 @@ export class FightSim {
   playerX = 0;
   invuln = 0;
   punchSide: "L" | "R" | null = null;
+  punchVariant: 0 | 1 | 2 = 0;
   starPunch = false;
 
   bossPose: BossPose = "idle";
@@ -385,6 +387,7 @@ export class FightSim {
 
   private tryPunch(side: "L" | "R") {
     this.punchSide = side;
+    this.punchVariant = ((this.punchVariant + 1) % 3) as 0 | 1 | 2;
     this.setPlayer("punch", 0.22);
     this.onSfx("punch");
     if (this.boss.id === "cops") {
@@ -802,6 +805,7 @@ export class FightSim {
       caption: this.caption,
       walkT: this.walkT,
       punchSide: this.punchSide,
+      punchVariant: this.punchVariant,
       finisherPlay: this.phase === "finisher" && Boolean(this.cinematic),
       endingT: this.phase === "ending" ? this.koT : 0,
     };

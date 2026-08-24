@@ -46,8 +46,13 @@ function sprite(
   ctx.restore();
 }
 
-function playerImg(assets: SpriteBook, pose: PlayerPose, slap: boolean) {
-  if (pose === "punch") return slap ? assets.player.slap ?? assets.player.punch : assets.player.punch;
+function playerImg(assets: SpriteBook, pose: PlayerPose, slap: boolean, variant = 0) {
+  if (pose === "punch") {
+    if (slap) return assets.player.slap ?? assets.player.punch;
+    if (variant === 2) return assets.player.punch3 ?? assets.player.punch;
+    if (variant === 1) return assets.player.punch2 ?? assets.player.punch;
+    return assets.player.punch;
+  }
   if (pose === "grab") return assets.player.grab ?? assets.player.punch;
   if (pose === "dodgeL" || pose === "dodgeR") return assets.player.dodge;
   if (pose === "duck") return assets.player.duck;
@@ -102,24 +107,6 @@ export function drawFrame(
   vm: ViewModel,
   assets: SpriteBook,
 ) {
-  if (vm.phase === "title" || vm.phase === "howto") {
-    ctx.fillStyle = "#140e0c";
-    ctx.fillRect(0, 0, w, h);
-    const frames = assets.walk;
-    if (frames.length) {
-      // Face-on walk frame — Richard staring the player down
-      sprite(ctx, frames[0], w * 0.5, h * 1.05, h * 0.78, { alpha: 0.95 });
-    }
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, "rgba(20,14,12,0.55)");
-    g.addColorStop(0.35, "rgba(20,14,12,0.15)");
-    g.addColorStop(0.7, "rgba(20,14,12,0.25)");
-    g.addColorStop(1, "rgba(20,14,12,0.85)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
-    return;
-  }
-
   if (vm.phase === "interlude") {
     drawWalk(ctx, w, h, vm, assets);
     return;
@@ -218,9 +205,9 @@ export function drawFrame(
   }
 
   if (vm.phase !== "finisher") {
-    const pimg = playerImg(assets, vm.playerPose, vm.boss.id === "manager" || vm.boss.id === "hr");
+    const pimg = playerImg(assets, vm.playerPose, vm.boss.id === "manager" || vm.boss.id === "hr", vm.punchVariant);
     sprite(ctx, pimg, w * 0.5 + vm.playerX * w * 0.18, h * 0.98, h * 0.46, {
-      flip: vm.playerPose === "dodgeR" || (vm.playerPose === "punch" && vm.punchSide === "L"),
+      flip: vm.playerPose === "dodgeR",
       sy: vm.playerSquash,
       sx: 1 / Math.max(0.7, vm.playerSquash),
     });
