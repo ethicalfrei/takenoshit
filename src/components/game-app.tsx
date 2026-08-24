@@ -509,7 +509,7 @@ function FatalityStage({ id, progress, playing }: { id: string; progress: number
   return (
     <video
       ref={ref}
-      src={`${src}?v=hero2`}
+      src={`${src}?v=pat1`}
       muted
       playsInline
       preload="auto"

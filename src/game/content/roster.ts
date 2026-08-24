@@ -262,7 +262,7 @@ export const ROSTER: BossDef[] = [
     guardCycleMs: 1220,
     music: "midday",
     palette: { ring: "#4a3d5c", glow: "#b09bc9" },
-    bg: "/sprites/bg-office.jpg",
+    bg: "/sprites/bg-hr.jpg",
     patterns: [
       { id: "form-l", telegraphMs: 520, activeMs: 280, recoverMs: 440, lane: "left", kind: "projectile", damage: 13, projectile: "paper", telegraphCue: "incident form, left" },
       { id: "form-r", telegraphMs: 520, activeMs: 280, recoverMs: 440, lane: "right", kind: "projectile", damage: 13, projectile: "paper", telegraphCue: "policy binder, right" },
@@ -273,11 +273,11 @@ export const ROSTER: BossDef[] = [
       { id: "receipt", telegraphMs: 450, activeMs: 260, recoverMs: 370, lane: "high", kind: "melee", damage: 13, telegraphCue: "acknowledge receipt, high" },
     ],
     finisher: {
-      prompt: "SPANK HER HARD",
+      prompt: "FILE HER",
       mashGoal: 9,
       windowMs: 5200,
-      successLine: "Policy reviewed. On her ass.",
-      flavor: "You bend her over the complaint desk and deliver a harsh, angry spanking until the handbook stops talking and HR learns what tone really means.",
+      successLine: "Incident closed. Drawer shut.",
+      flavor: "You stuff Patricia into the bottom drawer of her own filing cabinet until the handbook stops talking.",
     },
   },
   {
