@@ -5,7 +5,7 @@ export type ScreenCopy = {
 };
 
 export type Interlude = {
-  bossId: "roommate" | "leaf" | "baker" | "barista" | "manager" | "gym" | "boss" | "cops";
+  bossId: "roommate" | "leaf" | "baker" | "barista" | "manager" | "hr" | "gym" | "boss" | "cops";
   clock: string;
   place: string;
   from: string;
@@ -19,7 +19,7 @@ export type Interlude = {
 
 export const TITLE: ScreenCopy = {
   title: "TAKE NO SHIT",
-  body: "You have one day. Seven fights. Then the government.",
+  body: "You have one day. Eight fights. Then the government.",
   cta: "Get up",
 };
 
@@ -167,12 +167,32 @@ export const INTERLUDES: Interlude[] = [
     sting: "Take no shit.",
   },
   {
+    bossId: "hr",
+    clock: "9:41 AM",
+    place: "The HR suite",
+    from: "Conference room B",
+    to: "The HR suite",
+    walkLine: "Copier still warm. Hallway carpet. Policy air.",
+    narrator: [
+      "Valerie is paper. The day is not done with you.",
+      "HR already knows. They always know first.",
+      "Patricia Handbook has the incident form open. Your name is pre-filled.",
+      "Safe space. Open door. Closed mind.",
+      "She wants acknowledgment of receipt. She wants your tone adjusted.",
+      "The handbook is thicker than the complaint. She is thicker with power.",
+      "You walk in. She is already documenting the walk.",
+    ],
+    question: "Did you sign the form and take it?",
+    answer: "No.",
+    sting: "Take no shit.",
+  },
+  {
     bossId: "gym",
     clock: "12:17 PM",
     place: "The fluorescent gym",
-    from: "The office",
+    from: "The HR suite",
     to: "The fluorescent gym",
-    walkLine: "Office air to iron. The light does not rest.",
+    walkLine: "Policy air to iron. The light does not rest.",
     narrator: [
       "Lunch is a lie. The gym is fluorescent and closer.",
       "Brayden Rack is in the squat rack. Curling. Of course he is.",
@@ -230,7 +250,7 @@ export const INTERLUDES: Interlude[] = [
 
 export const VICTORY: ScreenCopy = {
   title: "You took no shit",
-  body: "You took no shit today. Seven fights. Inbox closed. You are going home.",
+  body: "You took no shit today. Eight fights. Inbox closed. You are going home.",
   cta: "Go home",
 };
 

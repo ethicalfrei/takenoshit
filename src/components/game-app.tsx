@@ -14,7 +14,7 @@ function sceneFor(phase: Phase, bossId: string): MusicScene {
   if (phase === "victory") return "victory";
   if (phase === "ending") return "cops";
   if (phase === "defeat") return "defeat";
-  const bosses = ["roommate", "leaf", "baker", "barista", "manager", "gym", "boss", "cops"] as const;
+  const bosses = ["roommate", "leaf", "baker", "barista", "manager", "hr", "gym", "boss", "cops"] as const;
   const id = bosses.find((b) => b === bossId);
   if (!id) return "walk";
   if (phase === "interlude") return `${id}V`;

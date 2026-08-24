@@ -6,6 +6,7 @@ export type MusicScene =
   | "baker"
   | "barista"
   | "manager"
+  | "hr"
   | "gym"
   | "boss"
   | "cops"
@@ -14,6 +15,7 @@ export type MusicScene =
   | "bakerV"
   | "baristaV"
   | "managerV"
+  | "hrV"
   | "gymV"
   | "bossV"
   | "copsV"
@@ -22,6 +24,7 @@ export type MusicScene =
   | "bakerF"
   | "baristaF"
   | "managerF"
+  | "hrF"
   | "gymF"
   | "bossF"
   | "copsF"
@@ -81,6 +84,7 @@ const BED_URL: Record<MusicScene, string> = {
   baker: asset(`/music/baker-chorus.mp3?${V}`),
   barista: asset(`/music/barista-chorus.mp3?${V}`),
   manager: asset(`/music/manager-chorus.mp3?${V}`),
+  hr: asset(`/music/manager-chorus.mp3?${V}`),
   gym: asset(`/music/gym-chorus.mp3?${V}`),
   boss: asset(`/music/boss-chorus.mp3?${V}`),
   cops: asset(`/music/cops.mp3?${V}`),
@@ -89,6 +93,7 @@ const BED_URL: Record<MusicScene, string> = {
   bakerV: asset(`/music/baker-verse.mp3?${V}`),
   baristaV: asset(`/music/barista-verse.mp3?${V}`),
   managerV: asset(`/music/manager-verse.mp3?${V}`),
+  hrV: asset(`/music/manager-verse.mp3?${V}`),
   gymV: asset(`/music/gym-verse.mp3?${V}`),
   bossV: asset(`/music/boss-verse.mp3?${V}`),
   copsV: asset(`/music/cops-verse.mp3?${V}`),
@@ -97,6 +102,7 @@ const BED_URL: Record<MusicScene, string> = {
   bakerF: asset(`/music/baker-fatality.mp3?${V}`),
   baristaF: asset(`/music/barista-fatality.mp3?${V}`),
   managerF: asset(`/music/manager-fatality.mp3?${V}`),
+  hrF: asset(`/music/manager-fatality.mp3?${V}`),
   gymF: asset(`/music/gym-fatality.mp3?${V}`),
   bossF: asset(`/music/boss-fatality.mp3?${V}`),
   copsF: asset(`/music/cops.mp3?${V}`),
@@ -230,6 +236,7 @@ export function createAudio(): GameAudio {
         return { bpm: 100, drums: 0.55, drive: 0.25, bright: 0.35 };
       case "midday":
       case "manager":
+      case "hr":
       case "gym":
         return { bpm: 110, drums: 0.7, drive: 0.32, bright: 0.4 };
       case "finale":
