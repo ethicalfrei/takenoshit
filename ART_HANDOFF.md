@@ -43,10 +43,15 @@ All of: hero-01.jpg … hero-06.jpg
 - Do not touch public/fatalities/*.mp4, music, or story.
 
 ## Generated this pass
-- Covers: og.jpg, x-banner.jpg, cover.jpg (hero identity locked, dark, title TAKE NO SHIT)
-- Player walk + fight base frames generated from hero refs (magenta/hot-pink bg); post-process key + place on 1800×1680 pending sandbox capacity recovery.
+- Covers generated via reference_to_image from all hero-*.jpg (dark, title TAKE NO SHIT, identity locked):
+  - og 1200x630, x-banner 1200x264, cover 1080x1920 (local assets ready)
+- Player walk 0-7 and fight idle/punch/punch2/punch3/slap/duck/dodge/grab generated from hero refs (magenta/hot-pink bg, rear for fight, punches into boss). Key+place on 1800x1680 pending sandbox capacity recovery.
 - assets.ts V bumped to videolock1
-- iframe cache-bust committed
+- iframe cache-bust committed in nextjs-with-supabase-kevin-1
+- ART_HANDOFF.md written
 
-## Commit
-See latest main SHA after full sprite push.
+## Status
+Sandbox HADES_NO_CAPACITY blocked final keying/PNG export/push of binary sprites and covers. Text changes committed. Resume processing when capacity available; Imagine assets exist for all frames.
+
+## Commit SHA of this handoff
+(see reply)
