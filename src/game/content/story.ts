@@ -19,7 +19,7 @@ export type Interlude = {
 
 export const TITLE: ScreenCopy = {
   title: "TAKE NO SHIT",
-  body: "You have one day. Eight fights. Then the government.",
+  body: "Volume Up Motherfucker!!!",
   cta: "Get up",
 };
 

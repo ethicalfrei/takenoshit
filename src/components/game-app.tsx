@@ -317,7 +317,9 @@ function TitleOverlay({
           <br />
           NO SHIT
         </h1>
-        <p className="mt-5 max-w-[16rem] text-pretty text-base leading-snug text-cream-dim">{TITLE.body}</p>
+        <p className="mt-5 max-w-[22rem] text-pretty font-display text-2xl leading-tight tracking-wide text-cream">
+          {TITLE.body}
+        </p>
       </div>
       <div className="pointer-events-auto mt-auto bg-ink/90 px-6 pb-10 pt-5">
         <p className="mb-5 text-sm text-steel">{caption}</p>
