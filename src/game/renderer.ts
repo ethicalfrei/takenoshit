@@ -46,8 +46,8 @@ function sprite(
   ctx.restore();
 }
 
-function playerImg(assets: SpriteBook, pose: PlayerPose) {
-  if (pose === "punch") return assets.player.punch;
+function playerImg(assets: SpriteBook, pose: PlayerPose, slap: boolean) {
+  if (pose === "punch") return slap ? assets.player.slap ?? assets.player.punch : assets.player.punch;
   if (pose === "grab") return assets.player.grab ?? assets.player.punch;
   if (pose === "dodgeL" || pose === "dodgeR") return assets.player.dodge;
   if (pose === "duck") return assets.player.duck;
@@ -198,7 +198,7 @@ export function drawFrame(
   }
 
   if (vm.phase !== "finisher") {
-    const pimg = playerImg(assets, vm.playerPose);
+    const pimg = playerImg(assets, vm.playerPose, vm.boss.id === "manager");
     sprite(ctx, pimg, w * 0.5 + vm.playerX * w * 0.18, h * 0.98, h * 0.46, {
       flip: vm.playerPose === "dodgeR" || (vm.playerPose === "punch" && vm.punchSide === "L"),
       sy: vm.playerSquash,

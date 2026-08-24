@@ -1,5 +1,5 @@
 export type SpriteBook = {
-  player: Record<"idle" | "punch" | "dodge" | "duck" | "grab", HTMLImageElement>;
+  player: Record<"idle" | "punch" | "slap" | "dodge" | "duck" | "grab", HTMLImageElement>;
   walk: HTMLImageElement[];
   bosses: Record<string, Record<"idle" | "attack" | "hurt", HTMLImageElement>>;
   proj: Record<string, HTMLImageElement>;
@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=horton1";
+const V = "v=horton2";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -20,6 +20,7 @@ const PATHS = {
   player: {
     idle: `/sprites/player-idle.png?${V}`,
     punch: `/sprites/player-punch.png?${V}`,
+    slap: `/sprites/player-slap.png?${V}`,
     dodge: `/sprites/player-dodge.png?${V}`,
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
