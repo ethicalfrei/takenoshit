@@ -131,6 +131,8 @@ export class FightSim {
   koT = 0;
   projectiles: Projectile[] = [];
   perfectDodge = false;
+  hitsThisWindow = 0;
+  stunCycles = 0;
 
   onSfx: (name: SfxName, opts?: { rate?: number }) => void = () => {};
   onVibrate: (ms: number) => void = () => {};
@@ -189,6 +191,8 @@ export class FightSim {
     this.cinematic = null;
     this.perfectDodge = false;
     this.starPunch = false;
+    this.hitsThisWindow = 0;
+    this.stunCycles = 0;
     this.cue = "";
     this.juice.trauma = 0;
     this.juice.hitstop = 0;
@@ -331,8 +335,10 @@ export class FightSim {
         if (this.ai.kind === "telegraph" && this.ai.pattern.lane === "high") this.perfectDodge = true;
       } else if (input.punchLPressed || input.punchRPressed) {
         this.tryPunch(input.punchLPressed ? "L" : "R");
-      } else if (input.grabPressed && this.ai.kind === "stunned") {
+      } else if (input.grabPressed && this.ai.kind === "stunned" && this.finishReady()) {
         this.startFinisher();
+      } else if (input.grabPressed && this.ai.kind === "stunned") {
+        this.juice.float(180, 240, "PUNISH", "#d4a574");
       } else if (this.playerPoseT > 0.32) {
         this.playerPose = "idle";
       }
@@ -344,30 +350,39 @@ export class FightSim {
     if (this.playerPose === "duck" && input.duck) this.invuln = Math.max(this.invuln, 0.08);
 
     if (this.ai.kind === "stunned" && this.playerPose !== "hurt") {
-      this.cue = "GRAB";
+      this.cue = this.finishReady() ? "GRAB" : "PUNISH";
     }
+  }
+
+  private finishReady() {
+    return this.stunCycles >= 2 || this.bossHp <= this.boss.hp * 0.4;
   }
 
   private tryPunch(side: "L" | "R") {
     this.punchSide = side;
     this.setPlayer("punch", 0.22);
     this.onSfx("punch");
+    if (this.ai.kind === "telegraph" || this.ai.kind === "attack") {
+      this.juice.float(180, 240, "DODGE FIRST", "#cfc4b6");
+      this.combo = 0;
+      return;
+    }
+    if (this.ai.kind !== "stunned" && this.hitsThisWindow >= 2) {
+      this.juice.float(180, 240, "DODGE", "#cfc4b6");
+      return;
+    }
     const guarded = (side === "L" && this.guard === "left") || (side === "R" && this.guard === "right");
     const windowOpen =
       this.ai.kind === "idle" ||
       this.ai.kind === "recover" ||
       this.ai.kind === "hurt" ||
-      (this.ai.kind === "telegraph" && this.ai.t > this.ai.pattern.telegraphMs / 1000 * 0.55);
+      this.ai.kind === "stunned";
 
-    if (this.ai.kind === "stunned") {
-      this.hitBoss(side === "L" ? 6 : 6, false);
-      return;
-    }
     if (!windowOpen) {
       this.juice.float(180, 240, "WHIFF", "#cfc4b6");
       return;
     }
-    if (guarded) {
+    if (guarded && this.ai.kind !== "stunned") {
       this.onSfx("block");
       this.juice.burst(180, 260, 8, "#cfc4b6", 90);
       this.juice.float(200, 250, "CLANG", "#9a938c");
@@ -379,7 +394,8 @@ export class FightSim {
     this.perfectDodge = false;
     if (perfect) this.stars = Math.min(3, this.stars + 1);
     const star = this.stars >= STAR_HITS_FOR_STUN || this.starPunch;
-    const dmg = star ? 18 : perfect ? 12 : 8;
+    const dmg = this.ai.kind === "stunned" ? (star ? 12 : 7) : star ? 14 : perfect ? 9 : 6;
+    if (this.ai.kind !== "stunned") this.hitsThisWindow += 1;
     this.hitBoss(dmg, star);
     if (star) {
       this.stars = 0;
@@ -388,8 +404,9 @@ export class FightSim {
   }
 
   private hitBoss(dmg: number, star: boolean) {
+    const wasStunned = this.ai.kind === "stunned";
     this.bossHp = Math.max(0, this.bossHp - dmg);
-    this.stun += dmg;
+    if (!wasStunned) this.stun += dmg;
     this.combo += 1;
     this.score += dmg * (1 + this.combo * 0.15) * (star ? 2 : 1);
     this.bossPose = "hurt";
@@ -404,12 +421,18 @@ export class FightSim {
     this.onSfx("punchHit", { rate: 1 + Math.min(0.2, this.combo * 0.02) });
     this.onVibrate(star ? 40 : 18);
     this.line = pick(this.boss.hurtLines);
-    this.ai = { kind: "hurt", t: star ? 0.38 : 0.22 };
 
     if (this.bossHp <= 0) {
-      this.knockout();
+      this.bossHp = 1;
+      this.stunBoss();
       return;
     }
+    if (wasStunned) {
+      this.bossPose = "stun";
+      this.cue = this.finishReady() ? "GRAB" : "PUNISH";
+      return;
+    }
+    this.ai = { kind: "hurt", t: star ? 0.28 : 0.16 };
     if (this.stun >= this.boss.stunThreshold || this.stars >= STAR_HITS_FOR_STUN) {
       this.stunBoss();
     }
@@ -417,10 +440,13 @@ export class FightSim {
 
   private stunBoss() {
     this.stun = this.boss.stunThreshold;
-    this.ai = { kind: "stunned", t: 2.4 };
+    this.stunCycles += 1;
+    this.hitsThisWindow = 0;
+    const ready = this.finishReady();
+    this.ai = { kind: "stunned", t: ready ? 3.4 : 1.7 };
     this.bossPose = "stun";
-    this.cue = "GRAB";
-    this.line = "WOBBLING. Grab them.";
+    this.cue = ready ? "GRAB" : "PUNISH";
+    this.line = ready ? "WOBBLING. Grab them." : "They're wobbly. Hit them.";
     this.onSfx("stun");
     this.juice.addTrauma(0.4);
     this.juice.burst(180, 240, 18, "#d4a574", 120);
@@ -540,7 +566,7 @@ export class FightSim {
 
     if (ai.kind === "idle") {
       this.bossPose = "idle";
-      this.cue = "";
+      this.cue = this.hitsThisWindow > 0 && this.hitsThisWindow < 2 ? "NOW" : "";
       if (ai.t <= 0) this.windUp();
       return;
     }
@@ -557,27 +583,32 @@ export class FightSim {
         this.tryConnect(ai.pattern, ai);
       }
       if (ai.t <= 0) {
-        this.ai = { kind: "recover", t: ai.pattern.recoverMs / 1000, pattern: ai.pattern };
+        this.ai = { kind: "recover", t: ai.pattern.recoverMs / 1000 + 0.22, pattern: ai.pattern };
       }
       return;
     }
     if (ai.kind === "recover") {
       this.bossPose = "idle";
-      this.cue = "";
-      if (ai.t <= 0) this.ai = { kind: "idle", t: 0.28 + Math.random() * 0.35 };
+      this.cue = "NOW";
+      if (ai.t <= 0) this.ai = { kind: "idle", t: 0.28 };
       return;
     }
     if (ai.kind === "hurt") {
       this.bossPose = "hurt";
-      if (ai.t <= 0) this.ai = { kind: "idle", t: 0.18 };
+      if (ai.t <= 0) {
+        if (this.hitsThisWindow >= 2) this.windUp();
+        else this.ai = { kind: "idle", t: 0.4 };
+      }
       return;
     }
     if (ai.kind === "stunned") {
       this.bossPose = "stun";
       this.bossRot = Math.sin(this.time * 8) * 0.12;
+      this.cue = this.finishReady() ? "GRAB" : "PUNISH";
       if (ai.t <= 0) {
         this.stun = 0;
         this.stars = 0;
+        this.hitsThisWindow = 0;
         this.cue = "";
         this.ai = { kind: "idle", t: 0.2 };
       }
@@ -588,12 +619,14 @@ export class FightSim {
     const pool = this.boss.patterns.filter((p) => p.id !== this.lastPattern);
     const pattern = pick(pool.length ? pool : this.boss.patterns);
     this.lastPattern = pattern.id;
-    this.ai = { kind: "telegraph", t: pattern.telegraphMs / 1000, pattern };
+    this.hitsThisWindow = 0;
+    this.ai = { kind: "telegraph", t: pattern.telegraphMs / 1000 + 0.2, pattern };
     this.cue = pattern.telegraphCue;
     this.onSfx("whoosh", { rate: 0.85 });
   }
 
   private launch(pattern: AttackPattern) {
+    this.hitsThisWindow = 0;
     this.ai = { kind: "attack", t: pattern.activeMs / 1000, pattern, connected: false };
     this.bossPose = "attack";
     this.bossScaleY = 1.12;
@@ -619,7 +652,7 @@ export class FightSim {
       this.line = "A WHIFF.";
       return;
     }
-    this.hitPlayer(pattern.damage);
+    this.hitPlayer(Math.max(5, Math.round(pattern.damage * 0.6)));
   }
 
   private tickProjectiles(dt: number) {
@@ -633,7 +666,7 @@ export class FightSim {
           this.combo += 1;
           this.score += 20;
         } else if (this.phase === "fight") {
-          this.hitPlayer(p.damage);
+          this.hitPlayer(Math.max(5, Math.round(p.damage * 0.6)));
         }
       }
     }
