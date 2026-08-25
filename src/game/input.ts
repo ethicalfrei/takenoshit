@@ -37,15 +37,24 @@ const KEY_MAP: Record<string, ActionName> = {
   ArrowDown: "duck",
   KeyJ: "punchL",
   KeyZ: "punchL",
+  Digit1: "punchL",
+  Numpad1: "punchL",
   KeyK: "punchR",
   KeyX: "punchR",
-  Space: "grab",
+  KeyF: "punchR",
+  Digit2: "punchR",
+  Numpad2: "punchR",
+  KeyW: "grab",
+  ArrowUp: "grab",
+  KeyC: "grab",
   KeyG: "grab",
+  Space: "grab",
+  Enter: "punchR",
+  NumpadEnter: "punchR",
   Escape: "pause",
   KeyP: "pause",
 };
 
-const GAME_CODES = new Set(Object.keys(KEY_MAP));
 const SWIPE_PX = 36;
 
 type Stroke = { x: number; y: number; t: number; action: ActionName | null };
@@ -68,18 +77,19 @@ export class GameInput {
     pause: false,
   };
   private buffer: { action: ActionName; until: number }[] = [];
+  private punchToggle = false;
   now = 0;
 
   attach() {
-    window.addEventListener("keydown", this.onKeyDown);
-    window.addEventListener("keyup", this.onKeyUp);
+    window.addEventListener("keydown", this.onKeyDown, { capture: true });
+    window.addEventListener("keyup", this.onKeyUp, { capture: true });
     window.addEventListener("blur", this.clear);
     document.addEventListener("visibilitychange", this.onVis);
   }
 
   detach() {
-    window.removeEventListener("keydown", this.onKeyDown);
-    window.removeEventListener("keyup", this.onKeyUp);
+    window.removeEventListener("keydown", this.onKeyDown, true);
+    window.removeEventListener("keyup", this.onKeyUp, true);
     window.removeEventListener("blur", this.clear);
     document.removeEventListener("visibilitychange", this.onVis);
     this.clear();
@@ -204,19 +214,39 @@ export class GameInput {
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
-    if (e.repeat) return;
-    const action = KEY_MAP[e.code];
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    let action = KEY_MAP[e.code];
+    if (e.code === "Space" || e.code === "Enter" || e.code === "NumpadEnter") {
+      if (this.mode === "mash") action = "grab";
+      else if (this.mode === "grab") action = "grab";
+      else if (this.mode === "fight") {
+        this.punchToggle = !this.punchToggle;
+        action = this.punchToggle ? "punchL" : "punchR";
+      } else {
+        return;
+      }
+    }
     if (!action) return;
-    if (GAME_CODES.has(e.code)) e.preventDefault();
+    e.preventDefault();
+    e.stopPropagation();
     if (this.mode === "mash") {
       this.mashPulses += 1;
+      this.lastGesture = "mash";
+      this.lastGestureAt = this.now;
       return;
     }
+    if (e.repeat) return;
     this.held.add(action);
-    this.buffer.push({ action, until: this.now + 0.14 });
+    this.buffer.push({ action, until: this.now + 0.18 });
   };
 
   private onKeyUp = (e: KeyboardEvent) => {
+    if (e.code === "Space" || e.code === "Enter" || e.code === "NumpadEnter") {
+      this.held.delete("punchL");
+      this.held.delete("punchR");
+      this.held.delete("grab");
+      return;
+    }
     const action = KEY_MAP[e.code];
     if (!action) return;
     this.held.delete(action);

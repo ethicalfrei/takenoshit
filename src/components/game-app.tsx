@@ -24,6 +24,7 @@ function sceneFor(phase: Phase, bossId: string): MusicScene {
 
 export function GameApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
   const simRef = useRef(new FightSim());
   const inputRef = useRef(new GameInput());
   const audioRef = useRef<GameAudio | null>(null);
@@ -60,12 +61,16 @@ export function GameApp() {
     kickAudio();
     const evs: (keyof WindowEventMap)[] = ["pointerdown", "touchstart", "keydown", "click"];
     evs.forEach((e) => window.addEventListener(e, kickAudio, { capture: true }));
+    const focusShell = () => shellRef.current?.focus({ preventScroll: true });
+    focusShell();
+    window.addEventListener("pointerdown", focusShell, { capture: true });
     return () => {
       alive = false;
       audioRef.current?.onBedEnded(null);
       input.detach();
       audioRef.current?.dispose();
       evs.forEach((e) => window.removeEventListener(e, kickAudio, true));
+      window.removeEventListener("pointerdown", focusShell, true);
     };
   }, []);
 
@@ -139,7 +144,7 @@ export function GameApp() {
             audioRef.current?.prefetch(next.boss.id);
           }
         }
-        if (next.phase === "interlude" && next.walkT > 22) {
+        if (next.phase === "interlude" && next.walkT > 16) {
           sim.beginFight();
         }
       }
@@ -157,6 +162,54 @@ export function GameApp() {
     }, 5200);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    const onMenuKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const go = e.code === "Enter" || e.code === "Space" || e.code === "NumpadEnter";
+      if (!go) return;
+      const sim = simRef.current;
+      const audio = audioRef.current;
+      if (sim.phase === "title") {
+        if (!assetsReady) return;
+        e.preventDefault();
+        audio?.unlock();
+        audio?.sfx("ui");
+        sim.startDay();
+        setHud(sim.hud());
+      } else if (sim.phase === "howto") {
+        e.preventDefault();
+        audio?.unlock();
+        audio?.sfx("ui");
+        sim.enterInterlude();
+        setHud(sim.hud());
+      } else if (sim.phase === "interlude") {
+        e.preventDefault();
+        audio?.unlock();
+        audio?.sfx("ui");
+        sim.beginFight();
+        setHud(sim.hud());
+      } else if (sim.phase === "defeat") {
+        e.preventDefault();
+        sim.retryFight();
+        setHud(sim.hud());
+      } else if (sim.phase === "victory" || (sim.phase === "ending" && sim.koT > 6.2)) {
+        e.preventDefault();
+        const cur = loadSave();
+        writeSave({
+          version: 1,
+          highScore: sim.highScore,
+          bestDay: Math.max(cur.bestDay, sim.bossIndex),
+          muted: sim.muted,
+        });
+        sim.phase = "title";
+        sim.bossIndex = 0;
+        setHud(sim.hud());
+      }
+    };
+    window.addEventListener("keydown", onMenuKey);
+    return () => window.removeEventListener("keydown", onMenuKey);
+  }, [assetsReady]);
 
   const persist = (partial: { highScore?: number; muted?: boolean }) => {
     const cur = loadSave();
@@ -205,7 +258,11 @@ export function GameApp() {
   const showFightUi = hud.phase === "fight" || hud.phase === "countdown" || hud.phase === "finisher" || hud.phase === "ko";
 
   return (
-    <div className="relative mx-auto h-dvh w-full max-w-[430px] overflow-hidden bg-ink text-cream">
+    <div
+      ref={shellRef}
+      tabIndex={0}
+      className="relative mx-auto h-dvh w-full max-w-[430px] overflow-hidden bg-ink text-cream outline-none"
+    >
       <canvas
         ref={canvasRef}
         className="absolute inset-0 z-0 h-full w-full touch-none bg-ink"
@@ -349,7 +406,9 @@ function TitleOverlay({
         >
           {ready ? TITLE.cta : "wait bitch"}
         </button>
-        <p className="mt-3 text-center text-xs text-steel">Swipe to dodge · Tap a half to punch</p>
+        <p className="mt-3 text-center text-xs text-steel">
+          Swipe or A/D / arrows to dodge · Tap or Space / F to punch
+        </p>
       </div>
     </div>
   );

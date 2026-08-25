@@ -43,8 +43,8 @@ export const HOW_TO: { title: string; steps: { label: string; detail: string }[]
       detail: "Clean shots fill the stars. Three stars, they wobble. Then you grab.",
     },
     {
-      label: "Mash",
-      detail: "The fatality is the whole screen. Mash it. Do not stop.",
+      label: "Keys",
+      detail: "A/D or arrows dodge. S or down ducks. Space, F, J/K punch. G grabs. Esc pauses. Enter also confirms menus.",
     },
   ],
 };
@@ -302,7 +302,7 @@ export const ANNOUNCER: {
 };
 
 export const CONTROLS_HINT: { swipe: string; punch: string; mash: string } = {
-  swipe: "Swipe off the hit.",
-  punch: "Tap a half to punch.",
-  mash: "Mash for the fatality.",
+  swipe: "Swipe or A/D / arrows.",
+  punch: "Tap or Space / F to punch.",
+  mash: "Mash Space for the fatality.",
 };
