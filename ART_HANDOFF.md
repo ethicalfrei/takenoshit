@@ -16,7 +16,7 @@ All of: hero-01.jpg … hero-06.jpg
   - player-punch3.png (dramatic uppercut)
   - player-slap.png (open hand, Valerie/Patricia)
   - player-duck.png player-dodge.png player-grab.png
-- Same man as hero-01.jpg in every frame.
+- Same man as hero stills in every frame.
 
 ## Bosses (overwrite sprites)
 - roommate (Drew): drew-01.jpg drew-02.jpg → roommate-idle/attack/hurt.png
@@ -37,21 +37,19 @@ All of: hero-01.jpg … hero-06.jpg
 ## Pipeline notes
 - Key magenta #FF00FF AND hot-pink (~RGB 223,10,116). Flood from corners + dilate.
 - All player sprites: canvas 1800×1680, person height 1480, feet 28px from bottom, centered. Huge margins (hands never clip).
+- Boss sprites also 1800×1680 same placement.
 - QA: walk 0–7 one man no missing hands; fight one man rear view punches at boss.
 - assets.ts const V = "v=videolock1"
 - Cache-bust iframe in nextjs-with-supabase-kevin-1: ?v=videolock1
 - Do not touch public/fatalities/*.mp4, music, or story.
 
-## Generated this pass
-- Covers generated via reference_to_image from all hero-*.jpg (dark, title TAKE NO SHIT, identity locked):
-  - og 1200x630, x-banner 1200x264, cover 1080x1920 (local assets ready)
-- Player walk 0-7 and fight idle/punch/punch2/punch3/slap/duck/dodge/grab generated from hero refs (magenta/hot-pink bg, rear for fight, punches into boss). Key+place on 1800x1680 pending sandbox capacity recovery.
-- assets.ts V bumped to videolock1
-- iframe cache-bust committed in nextjs-with-supabase-kevin-1
-- ART_HANDOFF.md written
+## Generated this pass (complete)
+- Covers: og.jpg 1200x630, x-banner.jpg 1200x264, cover.jpg 1080x1920 (dark, title TAKE NO SHIT, hero locked from refs).
+- Player: all walk-0..7 + idle/punch/punch2/punch3/slap/duck/dodge/grab — magenta keyed, 1800×1680 canvas, height 1480, feet 28px bottom, rear fight view, punches forward.
+- Bosses: all roommate/leaf/baker/barista/manager/hr/gym/boss/cops idle+attack+hurt/stun — keyed same canvas.
+- assets.ts V already "v=videolock1"
+- ART_HANDOFF.md updated
+- Ready for commit + push
 
 ## Status
-Sandbox HADES_NO_CAPACITY blocked final keying/PNG export/push of binary sprites and covers. Text changes committed. Resume processing when capacity available; Imagine assets exist for all frames.
-
-## Commit SHA of this handoff
-(see reply)
+Complete. Identity locked to public/refs/*.jpg only. No fatalities/music/story touched.
