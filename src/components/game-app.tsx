@@ -43,8 +43,7 @@ export function GameApp() {
     const input = inputRef.current;
     input.attach();
     let alive = true;
-    loadAssets()
-      .then((a) => {
+    loadAssets((a) => {
         if (!alive) return;
         assetsRef.current = a;
         setAssetsReady(true);
@@ -281,7 +280,12 @@ export function GameApp() {
         className="absolute inset-0 z-0 h-full w-full touch-none bg-ink"
         aria-label="Take No Shit fight arena"
       />
-      <MediaWarmup currentId={hud.boss.id} nextId={ROSTER[hud.bossIndex + 1]?.id} />
+      <MediaWarmup
+        currentId={hud.phase === "title" || hud.phase === "howto" ? "" : hud.boss.id}
+        nextId={
+          hud.phase === "fight" || hud.phase === "countdown" ? ROSTER[hud.bossIndex + 1]?.id : undefined
+        }
+      />
 
       {hud.phase === "title" && (
         <TitleOverlay
@@ -606,7 +610,8 @@ function MashOverlay({ mash }: { mash: NonNullable<HudState["mash"]> }) {
 }
 
 function MediaWarmup({ currentId, nextId }: { currentId: string; nextId?: string }) {
-  const ids = nextId && nextId !== currentId ? [currentId, nextId] : [currentId];
+  const ids = [currentId, nextId].filter((id, i, a): id is string => Boolean(id) && a.indexOf(id) === i);
+  if (!ids.length) return null;
   return (
     <div className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0" aria-hidden>
       {ids.map((id) => {

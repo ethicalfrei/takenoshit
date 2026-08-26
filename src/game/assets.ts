@@ -148,60 +148,119 @@ function placeholder() {
   return img;
 }
 
-function loadImage(src: string) {
+function makeImg() {
+  const img = new Image();
+  img.src = placeholder().src;
+  return img;
+}
+
+function loadInto(img: HTMLImageElement, src: string) {
   return new Promise<HTMLImageElement>((resolve) => {
-    const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => resolve(placeholder());
+    img.onerror = () => resolve(img);
     img.src = asset(src);
   });
 }
 
-async function pool<T, R>(items: T[], n: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
+async function pool<T>(items: T[], n: number, fn: (item: T) => Promise<unknown>): Promise<void> {
   let i = 0;
   async function worker() {
     while (i < items.length) {
       const idx = i++;
-      out[idx] = await fn(items[idx]);
+      await fn(items[idx]);
     }
   }
   await Promise.all(Array.from({ length: Math.min(n, items.length) }, () => worker()));
-  return out;
 }
 
-async function loadMap(map: Record<string, string>) {
-  const entries = Object.entries(map);
-  const imgs = await pool(entries, 6, ([, p]) => loadImage(p));
-  const out: Record<string, HTMLImageElement> = {};
-  entries.forEach(([k], i) => {
-    out[k] = imgs[i];
-  });
-  return out;
-}
-
-export async function loadAssets(): Promise<SpriteBook> {
-  const playerEntries = await loadMap(PATHS.player);
-  const walk = await pool(PATHS.walk, 4, loadImage);
-  const bosses: SpriteBook["bosses"] = {};
-  const bossIds = Object.entries(PATHS.bosses);
-  await pool(bossIds, 3, async ([id, poses]) => {
-    bosses[id] = {
-      idle: await loadImage(poses.idle),
-      attack: await loadImage(poses.attack),
-      hurt: await loadImage(poses.hurt),
-    };
-  });
-  return {
-    player: playerEntries as SpriteBook["player"],
-    walk,
-    bosses,
-    proj: await loadMap(PATHS.proj),
-    impact: await loadImage(PATHS.impact),
-    bg: await loadMap(PATHS.bg),
-    walkBg: await loadMap(PATHS.walkBg),
-    fatality: await loadMap(PATHS.fatality),
+export function createSpriteBook(): SpriteBook {
+  const player = {
+    idle: makeImg(),
+    punch: makeImg(),
+    punch2: makeImg(),
+    punch3: makeImg(),
+    slap: makeImg(),
+    dodge: makeImg(),
+    duck: makeImg(),
+    grab: makeImg(),
   };
+  const bosses: SpriteBook["bosses"] = {};
+  for (const id of Object.keys(PATHS.bosses)) {
+    bosses[id] = { idle: makeImg(), attack: makeImg(), hurt: makeImg() };
+  }
+  const from = (map: Record<string, string>) => {
+    const out: Record<string, HTMLImageElement> = {};
+    for (const k of Object.keys(map)) out[k] = makeImg();
+    return out;
+  };
+  return {
+    player,
+    walk: PATHS.walk.map(() => makeImg()),
+    bosses,
+    proj: from(PATHS.proj),
+    impact: makeImg(),
+    bg: from(PATHS.bg),
+    walkBg: from(PATHS.walkBg),
+    fatality: from(PATHS.fatality),
+  };
+}
+
+/** First walk + title. ~5 images so Get up is not blocked on 60MB of sprites. */
+export async function loadBoot(book: SpriteBook) {
+  await Promise.all([
+    ...PATHS.walk.map((src, i) => loadInto(book.walk[i], src)),
+    loadInto(book.player.idle, PATHS.player.idle),
+    loadInto(book.walkBg.roommate, PATHS.walkBg.roommate),
+  ]);
+}
+
+export async function loadRest(book: SpriteBook) {
+  await Promise.all([
+    loadInto(book.player.punch2, PATHS.player.punch2),
+    loadInto(book.player.punch3, PATHS.player.punch3),
+    loadInto(book.player.dodge, PATHS.player.dodge),
+    loadInto(book.player.duck, PATHS.player.duck),
+    loadInto(book.player.grab, PATHS.player.grab),
+    loadInto(book.player.slap, PATHS.player.slap),
+    loadInto(book.bosses.roommate.idle, PATHS.bosses.roommate.idle),
+    loadInto(book.bosses.roommate.attack, PATHS.bosses.roommate.attack),
+    loadInto(book.bosses.roommate.hurt, PATHS.bosses.roommate.hurt),
+    loadInto(book.bg.roommate, PATHS.bg.roommate),
+    loadInto(book.impact, PATHS.impact),
+  ]);
+  const jobs: Array<() => Promise<unknown>> = [];
+  for (const [k, src] of Object.entries(PATHS.player)) {
+    jobs.push(() => loadInto(book.player[k as keyof SpriteBook["player"]], src));
+  }
+  for (const [id, poses] of Object.entries(PATHS.bosses)) {
+    if (id === "roommate") continue;
+    jobs.push(() => loadInto(book.bosses[id].idle, poses.idle));
+    jobs.push(() => loadInto(book.bosses[id].attack, poses.attack));
+    jobs.push(() => loadInto(book.bosses[id].hurt, poses.hurt));
+  }
+  for (const [k, src] of Object.entries(PATHS.proj)) {
+    jobs.push(() => loadInto(book.proj[k], src));
+  }
+  for (const [k, src] of Object.entries(PATHS.bg)) {
+    if (k === "roommate") continue;
+    jobs.push(() => loadInto(book.bg[k], src));
+  }
+  for (const [k, src] of Object.entries(PATHS.walkBg)) {
+    if (k === "roommate") continue;
+    jobs.push(() => loadInto(book.walkBg[k], src));
+  }
+  for (const [k, src] of Object.entries(PATHS.fatality)) {
+    jobs.push(() => loadInto(book.fatality[k], src));
+  }
+  await pool(jobs, 8, (fn) => fn());
+}
+
+export async function loadAssets(onBoot?: (book: SpriteBook) => void): Promise<SpriteBook> {
+  const book = createSpriteBook();
+  await loadBoot(book);
+  onBoot?.(book);
+  void loadRest(book);
+  return book;
 }
 
 export const BG_FOR: Record<string, string> = PATHS.bg;
