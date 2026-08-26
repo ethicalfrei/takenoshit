@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=horton5";
+const V = "v=live3";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -27,7 +27,7 @@ const PATHS = {
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  walk: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `/sprites/player-walk-${i}.png?${V}`),
+  walk: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => `/sprites/player-walk-${i}.png?${V}`),
   bosses: {
     roommate: {
       idle: "/sprites/roommate-idle.png",

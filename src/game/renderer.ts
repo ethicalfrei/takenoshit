@@ -49,7 +49,6 @@ function sprite(
 function playerImg(assets: SpriteBook, pose: PlayerPose, slap: boolean, variant = 0) {
   if (pose === "punch") {
     if (slap) return assets.player.slap ?? assets.player.punch;
-    if (variant === 2) return assets.player.punch3 ?? assets.player.punch;
     if (variant === 1) return assets.player.punch2 ?? assets.player.punch;
     return assets.player.punch;
   }
