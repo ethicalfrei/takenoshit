@@ -49,8 +49,9 @@ function sprite(
 function playerImg(assets: SpriteBook, pose: PlayerPose, slap: boolean, variant = 0) {
   if (pose === "punch") {
     if (slap) return assets.player.slap ?? assets.player.punch;
-    if (variant === 1) return assets.player.punch2 ?? assets.player.punch;
-    return assets.player.punch;
+    // jab (from-behind) + left-hand camera uppercut. Skip the right-hand huge fist.
+    if (variant === 1) return assets.player.punch3 ?? assets.player.punch2;
+    return assets.player.punch2 ?? assets.player.punch;
   }
   if (pose === "grab") return assets.player.grab ?? assets.player.punch;
   if (pose === "dodgeL" || pose === "dodgeR") return assets.player.dodge;
