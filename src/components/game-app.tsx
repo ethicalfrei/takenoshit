@@ -384,7 +384,13 @@ function TitleOverlay({
 }) {
   return (
     <div className="absolute inset-0 flex flex-col" onPointerDown={onUnlock}>
-      <div className="px-6 pt-16">
+      <img
+        src="/cover.jpg?v=live2"
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-ink/45 via-ink/25 to-ink/90" />
+      <div className="relative z-10 px-6 pt-16">
         <p className="font-sans text-xs tracking-[0.22em] text-cream-dim uppercase">A day of boss fights</p>
         <h1 className="mt-3 font-display text-7xl leading-[0.82] tracking-tight text-cream drop-shadow-[0_2px_12px_rgba(20,14,12,0.85)]">
           TAKE
@@ -395,7 +401,7 @@ function TitleOverlay({
           {TITLE.body}
         </p>
       </div>
-      <div className="pointer-events-auto mt-auto bg-ink/90 px-6 pb-10 pt-5">
+      <div className="pointer-events-auto relative z-10 mt-auto bg-ink/90 px-6 pb-10 pt-5">
         <p className="mb-5 text-sm text-steel">{caption}</p>
         <p className="mb-3 font-display text-xl tabular-nums tracking-wide text-cream-dim">BEST {highScore}</p>
         <button

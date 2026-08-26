@@ -1,5 +1,5 @@
 export type SpriteBook = {
-  player: Record<"idle" | "punch" | "slap" | "dodge" | "duck" | "grab", HTMLImageElement>;
+  player: Record<"idle" | "punch" | "punch2" | "punch3" | "slap" | "dodge" | "duck" | "grab", HTMLImageElement>;
   walk: HTMLImageElement[];
   bosses: Record<string, Record<"idle" | "attack" | "hurt", HTMLImageElement>>;
   proj: Record<string, HTMLImageElement>;
@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=horton4";
+const V = "v=live2";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -20,12 +20,14 @@ const PATHS = {
   player: {
     idle: `/sprites/player-idle.png?${V}`,
     punch: `/sprites/player-punch.png?${V}`,
+    punch2: `/sprites/player-punch2.png?${V}`,
+    punch3: `/sprites/player-punch3.png?${V}`,
     slap: `/sprites/player-slap.png?${V}`,
     dodge: `/sprites/player-dodge.png?${V}`,
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  walk: [0, 1, 2, 3].map((i) => `/sprites/player-walk-${i}.png?${V}`),
+  walk: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `/sprites/player-walk-${i}.png?${V}`),
   bosses: {
     roommate: {
       idle: "/sprites/roommate-idle.png",
@@ -52,6 +54,11 @@ const PATHS = {
       attack: "/sprites/manager-attack.png",
       hurt: "/sprites/manager-idle.png",
     },
+    hr: {
+      idle: `/sprites/hr-idle.png?${V}`,
+      attack: `/sprites/hr-attack.png?${V}`,
+      hurt: `/sprites/hr-hurt.png?${V}`,
+    },
     gym: {
       idle: "/sprites/gym-idle.png",
       attack: "/sprites/gym-attack.png",
@@ -59,7 +66,7 @@ const PATHS = {
     },
     boss: {
       idle: "/sprites/boss-idle.png",
-      attack: "/sprites/boss-attack.png",
+      attack: "/sprites/boss-attack.png?v=rear1",
       hurt: "/sprites/boss-stun.png",
     },
     cops: {
@@ -85,6 +92,7 @@ const PATHS = {
     baker: "/sprites/bg-bakery.jpg",
     barista: "/sprites/bg-coffee.jpg",
     manager: "/sprites/bg-office.jpg",
+    hr: "/sprites/bg-hr.jpg?v=pat1",
     gym: "/sprites/bg-gym.jpg",
     boss: "/sprites/bg-corner.jpg",
     cops: "/sprites/bg-street.jpg",
@@ -95,19 +103,21 @@ const PATHS = {
     baker: "/walks/walk-baker.jpg",
     barista: "/walks/walk-barista.jpg",
     manager: "/walks/walk-manager.jpg",
+    hr: "/walks/walk-hr.jpg?v=pat1",
     gym: "/walks/walk-gym.jpg",
-    boss: "/walks/walk-boss.jpg",
+    boss: "/walks/walk-boss.jpg?v=rich1",
     cops: "/walks/walk-cops.jpg",
   },
   fatality: {
-    roommate: "/fatalities/roommate.jpg",
-    leaf: "/fatalities/leaf.jpg",
-    baker: "/fatalities/baker.jpg",
-    barista: "/fatalities/barista.jpg",
-    manager: "/fatalities/manager.jpg",
-    gym: "/fatalities/gym.jpg",
-    boss: "/fatalities/boss.jpg",
-    cops: "/fatalities/cops.jpg",
+    roommate: "/fatalities/roommate.jpg?v=hero2",
+    leaf: "/fatalities/leaf.jpg?v=hero2",
+    baker: "/fatalities/baker.jpg?v=hero2",
+    barista: "/fatalities/barista.jpg?v=hero2",
+    manager: "/fatalities/manager.jpg?v=hero2",
+    hr: "/fatalities/hr.jpg?v=file2",
+    gym: "/fatalities/gym.jpg?v=hero2",
+    boss: "/fatalities/boss.jpg?v=suplex1",
+    cops: "/fatalities/cops.jpg?v=hero2",
   },
 };
 
@@ -117,6 +127,7 @@ export const FATALITY_VID: Record<string, string> = {
   baker: asset("/fatalities/baker.mp4"),
   barista: asset("/fatalities/barista.mp4"),
   manager: asset("/fatalities/manager.mp4"),
+  hr: asset("/fatalities/hr.mp4"),
   gym: asset("/fatalities/gym.mp4"),
   boss: asset("/fatalities/boss.mp4"),
   cops: asset("/fatalities/cops.mp4"),

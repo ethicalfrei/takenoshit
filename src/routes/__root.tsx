@@ -13,6 +13,10 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       { name: "theme-color", content: "#140e0c" },
       { name: "description", content: "A day of boss fights. Punch-Out your roommate, your baker, your manager, and your actual boss." },
+      { property: "og:title", content: APP_NAME },
+      { property: "og:image", content: "/og.jpg?v=live2" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "/og.jpg?v=live2" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
