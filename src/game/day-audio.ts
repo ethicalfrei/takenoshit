@@ -73,7 +73,7 @@ function asset(path: string) {
   return `${base}${path}`;
 }
 
-const V = "v=chorusonly1";
+const V = "v=fatality6";
 
 const BED_URL: Record<MusicScene, string> = {
   title: asset(`/music/title.mp3?${V}`),
@@ -102,7 +102,7 @@ const BED_URL: Record<MusicScene, string> = {
   bakerF: asset(`/music/baker-fatality.mp3?${V}`),
   baristaF: asset(`/music/barista-fatality.mp3?${V}`),
   managerF: asset(`/music/manager-fatality.mp3?${V}`),
-  hrF: asset(`/music/manager-fatality.mp3?${V}`),
+  hrF: asset(`/music/hr-fatality.mp3?${V}`),
   gymF: asset(`/music/gym-fatality.mp3?${V}`),
   bossF: asset(`/music/boss-fatality.mp3?${V}`),
   copsF: asset(`/music/cops.mp3?${V}`),
@@ -156,9 +156,11 @@ export function createAudio(): GameAudio {
     if (!c || !bus) return null;
     let b = beds.get(url);
     if (b) return b;
-    const el = new Audio(url);
-    el.loop = !url.includes("-verse") && !url.includes("-fatality") && !url.includes("victory") && !url.includes("defeat");
+    const el = new Audio();
     el.preload = "auto";
+    el.loop = !url.includes("-verse") && !url.includes("-fatality") && !url.includes("victory") && !url.includes("defeat");
+    el.crossOrigin = "anonymous";
+    el.src = url;
     const src = c.createMediaElementSource(el);
     const gain = c.createGain();
     gain.gain.value = 0;
@@ -173,28 +175,53 @@ export function createAudio(): GameAudio {
       const fb = url.replace("-chorus.mp3", ".mp3").replace("-verse.mp3", ".mp3").replace("-fatality.mp3", ".mp3");
       if (fb !== url) fadeToBed(fb);
     });
+    el.load();
     return b;
+  }
+
+  function bufferBed(url: string) {
+    const b = ensureBed(url);
+    if (!b) return;
+    if (b.el.readyState >= 3) return;
+    if (!b.el.paused) return;
+    void b.el.play().then(() => {
+      if (currentBed !== url) {
+        b.el.pause();
+        try {
+          b.el.currentTime = 0;
+        } catch {
+          /* ignore */
+        }
+      }
+    }).catch(() => {});
   }
 
   function fadeToBed(url: string) {
     if (!ctx || !musicBus) return;
+    if (currentBed === url) {
+      const same = beds.get(url);
+      if (same && same.el.paused) void same.el.play().catch(() => {});
+      return;
+    }
+    const snap = url.includes("-fatality") || currentBed.includes("-verse");
+    const fade = snap ? 0.1 : 0.4;
     const now = ctx.currentTime;
     for (const [u, b] of beds) {
       if (u === url) continue;
       b.gain.gain.cancelScheduledValues(now);
       b.gain.gain.setValueAtTime(b.gain.gain.value, now);
-      b.gain.gain.linearRampToValueAtTime(0, now + 0.4);
+      b.gain.gain.linearRampToValueAtTime(0, now + fade);
       window.setTimeout(() => {
         if (currentBed !== u) b.el.pause();
-      }, 450);
+      }, fade * 1000 + 40);
     }
     const next = ensureBed(url);
     if (!next) return;
     next.el.currentTime = 0;
     void next.el.play().catch(() => {});
     next.gain.gain.cancelScheduledValues(now);
-    next.gain.gain.setValueAtTime(next.gain.gain.value, now);
-    next.gain.gain.linearRampToValueAtTime(0.82, now + 0.38);
+    next.gain.gain.setValueAtTime(0.0001, now);
+    next.gain.gain.linearRampToValueAtTime(0.82, now + Math.min(0.22, fade + 0.12));
     currentBed = url;
   }
 
@@ -512,7 +539,7 @@ export function createAudio(): GameAudio {
     },
     prefetch(next) {
       ensure();
-      ensureBed(BED_URL[next]);
+      bufferBed(BED_URL[next]);
     },
     onBedEnded(cb) {
       endedCb = cb;

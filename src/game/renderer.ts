@@ -73,7 +73,7 @@ function drawWalk(
   assets: SpriteBook,
 ) {
   const bg = assets.walkBg[vm.boss.id];
-  const pan = Math.min(1, vm.walkT / 7);
+  const pan = Math.min(1, vm.walkT / Math.max(8, vm.walkDuration * 0.88));
   if (bg) {
     ctx.save();
     ctx.filter = "brightness(0.82) saturate(0.95)";
@@ -97,6 +97,62 @@ function drawWalk(
     const x = w * 0.36;
     sprite(ctx, frames[fi], x, h * 0.96, h * 0.44);
   }
+
+  if (vm.showIntro) {
+    const bset = assets.bosses[vm.boss.id];
+    const u = Math.min(1, (vm.walkT - vm.introAt) / 1.7);
+    const arenaU = Math.min(1, (vm.walkT - vm.introAt) / 1.6);
+    if (bset && arenaU < 0.55) {
+      const xBoss = w * (0.96 - 0.22 * u);
+      sprite(ctx, bset.idle, xBoss, h * 0.8, h * 0.46, {
+        alpha: (0.2 + 0.8 * u) * (1 - Math.min(1, arenaU / 0.55)),
+        sx: 0.92 + 0.08 * u,
+        sy: 0.92 + 0.08 * u,
+      });
+    }
+  }
+}
+
+function drawFightPreview(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  vm: ViewModel,
+  assets: SpriteBook,
+) {
+  const bg = assets.bg[vm.boss.id];
+  if (bg) {
+    ctx.save();
+    ctx.filter = "brightness(0.78) saturate(0.9)";
+    coverDraw(ctx, bg, w, h);
+    ctx.filter = "none";
+    ctx.restore();
+  } else {
+    ctx.fillStyle = "#140e0c";
+    ctx.fillRect(0, 0, w, h);
+  }
+  const g = ctx.createLinearGradient(0, h * 0.55, 0, h);
+  g.addColorStop(0, "rgba(20,14,12,0)");
+  g.addColorStop(1, "rgba(20,14,12,0.72)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath();
+  ctx.ellipse(w * 0.5, h * 0.62, w * 0.22, 18, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(w * 0.5, h * 0.92, w * 0.2, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const bset = assets.bosses[vm.boss.id];
+  if (bset) {
+    const bossH = vm.boss.id === "cops" ? h * 0.62 : h * 0.52;
+    const bossY = vm.boss.id === "cops" ? h * 0.72 : h * 0.68;
+    sprite(ctx, bset.idle, w * 0.5, bossY, bossH);
+  }
+  const pimg = playerImg(assets, "idle", vm.boss.id === "manager" || vm.boss.id === "hr");
+  sprite(ctx, pimg, w * 0.5, h * 0.98, h * 0.46);
 }
 
 export function drawFrame(
@@ -108,6 +164,15 @@ export function drawFrame(
 ) {
   if (vm.phase === "interlude") {
     drawWalk(ctx, w, h, vm, assets);
+    if (vm.showIntro) {
+      const u = Math.min(1, (vm.walkT - vm.introAt) / 1.55);
+      if (u > 0.02) {
+        ctx.save();
+        ctx.globalAlpha = u;
+        drawFightPreview(ctx, w, h, vm, assets);
+        ctx.restore();
+      }
+    }
     return;
   }
 

@@ -204,3 +204,26 @@ export async function loadAssets(): Promise<SpriteBook> {
 }
 
 export const BG_FOR: Record<string, string> = PATHS.bg;
+
+export function fatalitySrc(id: string) {
+  const src = FATALITY_VID[id];
+  return src ? `${src}?v=file2` : "";
+}
+
+export function warmFightVisuals(book: SpriteBook, id: string) {
+  const imgs: Array<HTMLImageElement | undefined> = [
+    book.bg[id],
+    book.bosses[id]?.idle,
+    book.bosses[id]?.attack,
+    book.bosses[id]?.hurt,
+    book.player.idle,
+    book.player.punch,
+    book.player.dodge,
+    book.player.duck,
+    book.fatality[id],
+  ];
+  for (const img of imgs) {
+    if (img?.decode) void img.decode().catch(() => {});
+  }
+}
+

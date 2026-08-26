@@ -1,15 +1,15 @@
 import { Pause } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createAudio, type GameAudio, type MusicScene } from "@/game/day-audio";
-import { loadAssets, FATALITY_VID, type SpriteBook } from "@/game/assets";
+import { loadAssets, fatalitySrc, warmFightVisuals, type SpriteBook } from "@/game/assets";
 import { FightSim, type HudState, type Phase } from "@/game/combat";
 import { INTERLUDES, TITLE, HOW_TO, PAUSE, VICTORY, DEFEAT, ENDING, CREDITS_TAG, DAY_SONG_CAPTIONS, CONTROLS_HINT, type Interlude } from "@/game/content/story";
 import { GameInput } from "@/game/input";
 import { drawFrame } from "@/game/renderer";
 import { loadSave, writeSave } from "@/game/save";
-import { PLAYER_MAX_HP } from "@/game/content/roster";
+import { PLAYER_MAX_HP, ROSTER } from "@/game/content/roster";
 
-function sceneFor(phase: Phase, bossId: string): MusicScene {
+function sceneFor(phase: Phase, bossId: string, finisherPlay: boolean): MusicScene {
   if (phase === "title" || phase === "howto") return "title";
   if (phase === "victory") return "victory";
   if (phase === "ending") return "cops";
@@ -18,7 +18,8 @@ function sceneFor(phase: Phase, bossId: string): MusicScene {
   const id = bosses.find((b) => b === bossId);
   if (!id) return "walk";
   if (phase === "interlude") return `${id}V`;
-  if (phase === "finisher") return `${id}F`;
+  if (phase === "finisher") return finisherPlay ? `${id}F` : id;
+  if (phase === "ko") return `${id}F`;
   return id;
 }
 
@@ -53,8 +54,7 @@ export function GameApp() {
       });
     audioRef.current?.onBedEnded(() => {
       if (simRef.current.phase === "interlude") {
-        simRef.current.beginFight();
-        setHud(simRef.current.hud());
+        simRef.current.markVerseEnded();
       }
     });
     const kickAudio = () => audioRef.current?.unlock();
@@ -136,16 +136,13 @@ export function GameApp() {
         hudAcc = 0;
         const next = sim.hud();
         setHud(next);
-        const sc = sceneFor(next.phase, next.boss.id);
+        const sc = sceneFor(next.phase, next.boss.id, next.finisherPlay);
         if (sc !== lastScene) {
           lastScene = sc;
           audioRef.current?.setScene(sc);
           if (next.phase === "interlude") {
             audioRef.current?.prefetch(next.boss.id);
           }
-        }
-        if (next.phase === "interlude" && next.walkT > 16) {
-          sim.beginFight();
         }
       }
     };
@@ -162,6 +159,35 @@ export function GameApp() {
     }, 5200);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const id = hud.boss.id;
+    const fight = id as MusicScene;
+    const fatality = `${id}F` as MusicScene;
+    const verse = `${id}V` as MusicScene;
+    if (hud.phase === "howto" || hud.phase === "interlude") {
+      if (hud.phase === "howto") audio.prefetch(verse);
+      audio.prefetch(fight);
+      audio.prefetch(fatality);
+      if (assetsRef.current) warmFightVisuals(assetsRef.current, id);
+    }
+    const nxt = ROSTER[hud.bossIndex + 1];
+    if (
+      nxt &&
+      (hud.showIntro ||
+        hud.phase === "fight" ||
+        hud.phase === "countdown" ||
+        hud.phase === "finisher" ||
+        hud.phase === "ko")
+    ) {
+      audio.prefetch(`${nxt.id}V` as MusicScene);
+      audio.prefetch(nxt.id as MusicScene);
+      audio.prefetch(`${nxt.id}F` as MusicScene);
+      if (assetsRef.current) warmFightVisuals(assetsRef.current, nxt.id);
+    }
+  }, [hud.phase, hud.boss.id, hud.bossIndex, hud.showIntro, assetsReady]);
 
   useEffect(() => {
     const onMenuKey = (e: KeyboardEvent) => {
@@ -182,12 +208,6 @@ export function GameApp() {
         audio?.unlock();
         audio?.sfx("ui");
         sim.enterInterlude();
-        setHud(sim.hud());
-      } else if (sim.phase === "interlude") {
-        e.preventDefault();
-        audio?.unlock();
-        audio?.sfx("ui");
-        sim.beginFight();
         setHud(sim.hud());
       } else if (sim.phase === "defeat") {
         e.preventDefault();
@@ -232,13 +252,6 @@ export function GameApp() {
     setHud(simRef.current.hud());
   };
 
-  const toFight = () => {
-    unlock();
-    audioRef.current?.sfx("ui");
-    simRef.current.beginFight();
-    setHud(simRef.current.hud());
-  };
-
   const afterHowTo = () => {
     unlock();
     audioRef.current?.sfx("ui");
@@ -268,6 +281,7 @@ export function GameApp() {
         className="absolute inset-0 z-0 h-full w-full touch-none bg-ink"
         aria-label="Take No Shit fight arena"
       />
+      <MediaWarmup currentId={hud.boss.id} nextId={ROSTER[hud.bossIndex + 1]?.id} />
 
       {hud.phase === "title" && (
         <TitleOverlay
@@ -280,7 +294,7 @@ export function GameApp() {
       )}
       {hud.phase === "howto" && <HowToOverlay onNext={afterHowTo} />}
       {hud.phase === "interlude" && (
-        <InterludeOverlay data={interlude} walkT={hud.walkT} onFight={toFight} />
+        <InterludeOverlay data={interlude} hud={hud} />
       )}
       {hud.phase === "defeat" && (
         <EndOverlay
@@ -443,15 +457,12 @@ function HowToOverlay({ onNext }: { onNext: () => void }) {
   );
 }
 
-function InterludeOverlay({ data, walkT, onFight }: { data: Interlude; walkT: number; onFight: () => void }) {
-  const shown = Math.min(data.narrator.length, 1 + Math.floor(walkT / 1.15));
-  const showQ = walkT > data.narrator.length * 1.15 + 0.3;
+function InterludeOverlay({ data, hud }: { data: Interlude; hud: HudState }) {
+  const lineDt = Math.max(1.2, (hud.introAt * 0.72) / Math.max(1, data.narrator.length));
+  const shown = Math.min(data.narrator.length, 1 + Math.floor(hud.walkT / lineDt));
+  const showQ = hud.walkT > data.narrator.length * lineDt + 0.2;
   return (
-    <button
-      type="button"
-      onClick={onFight}
-      className="absolute inset-0 flex flex-col justify-end px-6 pb-10 pt-14 text-left"
-    >
+    <div className="pointer-events-none absolute inset-0 flex flex-col justify-end px-6 pb-10 pt-14 text-left">
       <p className="font-display text-4xl tabular-nums leading-none text-cream drop-shadow-[0_2px_8px_rgba(20,14,12,0.9)]">
         {data.clock}
       </p>
@@ -466,7 +477,7 @@ function InterludeOverlay({ data, walkT, onFight }: { data: Interlude; walkT: nu
           </p>
         ))}
       </div>
-      {showQ && (
+      {showQ && !hud.showIntro && (
         <div className="mt-6">
           <p className="font-display text-3xl leading-tight text-cream">{data.question}</p>
           {data.bossId === "cops" && (
@@ -474,8 +485,16 @@ function InterludeOverlay({ data, walkT, onFight }: { data: Interlude; walkT: nu
           )}
         </div>
       )}
+      {hud.showIntro && (
+        <div className="mt-6 border-l-2 border-brick pl-4">
+          <p className="text-xs uppercase tracking-[0.28em] text-brick">VS</p>
+          <p className="font-display text-5xl leading-none tracking-tight text-cream">{hud.boss.name}</p>
+          <p className="mt-1 text-sm uppercase tracking-[0.16em] text-steel">{hud.boss.subtitle}</p>
+          <p className="mt-3 max-w-[20rem] text-pretty text-base text-cream-dim">{hud.boss.introLine}</p>
+        </div>
+      )}
       <p className="mt-5 text-sm text-steel">{data.walkLine}</p>
-    </button>
+    </div>
   );
 }
 
@@ -586,9 +605,22 @@ function MashOverlay({ mash }: { mash: NonNullable<HudState["mash"]> }) {
   );
 }
 
+function MediaWarmup({ currentId, nextId }: { currentId: string; nextId?: string }) {
+  const ids = nextId && nextId !== currentId ? [currentId, nextId] : [currentId];
+  return (
+    <div className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0" aria-hidden>
+      {ids.map((id) => {
+        const src = fatalitySrc(id);
+        if (!src) return null;
+        return <video key={id} src={src} muted playsInline preload="auto" />;
+      })}
+    </div>
+  );
+}
+
 function FatalityStage({ id, progress, playing }: { id: string; progress: number; playing: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const src = FATALITY_VID[id];
+  const src = fatalitySrc(id);
   useEffect(() => {
     const v = ref.current;
     if (!v || !src) return;
@@ -614,7 +646,7 @@ function FatalityStage({ id, progress, playing }: { id: string; progress: number
   return (
     <video
       ref={ref}
-      src={`${src}?v=file2`}
+      src={src}
       muted
       playsInline
       preload="auto"

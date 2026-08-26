@@ -1,4 +1,5 @@
 import { PLAYER_MAX_HP, ROSTER, STAR_HITS_FOR_STUN, type AttackPattern, type BossDef, type Guard, type Lane } from "./content/roster";
+import { fatalityHold, introAt, introHold, verseDuration } from "./music-timing";
 import type { FrameInput } from "./input";
 import { Juice } from "./juice";
 import type { SfxName } from "./day-audio";
@@ -52,6 +53,9 @@ export type HudState = {
   punchVariant: 0 | 1;
   finisherPlay: boolean;
   endingT: number;
+  walkDuration: number;
+  introAt: number;
+  showIntro: boolean;
 };
 
 export type ViewModel = HudState & {
@@ -111,6 +115,7 @@ export class FightSim {
   cinematic: Cinematic | null = null;
   mash = { count: 0, goal: 12, t: 0, prompt: "" };
   walkT = 0;
+  verseEnded = false;
 
   playerPose: PlayerPose = "idle";
   playerPoseT = 0;
@@ -159,6 +164,7 @@ export class FightSim {
     this.phase = "interlude";
     this.playerHp = PLAYER_MAX_HP;
     this.walkT = 0;
+    this.verseEnded = false;
     this.resetFight();
   }
 
@@ -218,6 +224,9 @@ export class FightSim {
     if (this.phase === "interlude") {
       this.walkT += dt;
       this.juice.update(dt);
+      const ready = this.walkT >= introHold(this.boss.id);
+      const verseDone = this.verseEnded || this.walkT >= verseDuration(this.boss.id);
+      if (ready && verseDone) this.beginFight();
       return;
     }
 
@@ -501,11 +510,15 @@ export class FightSim {
     this.juice.addTrauma(0.3);
   }
 
+  markVerseEnded() {
+    this.verseEnded = true;
+  }
+
   private tickFinisher(dt: number, input: FrameInput) {
     if (this.cinematic) {
       this.cinematic.t += dt;
       this.runCinematic(dt);
-      if (this.cinematic.t > 6.2) {
+      if (this.cinematic.t > fatalityHold(this.boss.id)) {
         this.cinematic = null;
         this.knockout();
       }
@@ -808,6 +821,9 @@ export class FightSim {
       punchVariant: this.punchVariant,
       finisherPlay: this.phase === "finisher" && Boolean(this.cinematic),
       endingT: this.phase === "ending" ? this.koT : 0,
+      walkDuration: verseDuration(this.boss.id),
+      introAt: introAt(this.boss.id),
+      showIntro: this.phase === "interlude" && this.walkT >= introAt(this.boss.id),
     };
   }
 
