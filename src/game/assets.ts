@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=cand2";
+const V = "v=cand3";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -27,7 +27,7 @@ const PATHS = {
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  // Walk cycle: 5 stride frames + candidate 2 (3/4 lifted-leg). No reverse, no punch/jab.
+  // Walk cycle: stride 0–4 + cand 2 (left lift) + cand 3 (right lift). No reverse, no punch/jab.
   walk: [
     `/sprites/player-walk-0.png?${V}`,
     `/sprites/player-walk-1.png?${V}`,
@@ -35,6 +35,7 @@ const PATHS = {
     `/sprites/player-walk-3.png?${V}`,
     `/sprites/player-walk-4.png?${V}`,
     `/sprites/player-walk-5.png?${V}`,
+    `/sprites/player-walk-6.png?${V}`,
   ],
   bosses: {
     roommate: {
