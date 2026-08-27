@@ -9,10 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=live7";
-
-/** Mirror left-profile frames (filenames 0 and 5) so every step faces the same way. */
-export const WALK_FLIP = [true, false, false, false, false, true];
+const V = "v=live8";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -30,8 +27,7 @@ const PATHS = {
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  // Unique walk poses. 0 and 5 are left-profile in the files — WALK_FLIP mirrors
-  // them so the whole cycle walks the same way (never the reverse-facing pose).
+  // Six 3/4-toward-camera walk poses. No side-profile reverse, no mirroring.
   walk: [0, 1, 2, 3, 4, 5].map((i) => `/sprites/player-walk-${i}.png?${V}`),
   bosses: {
     roommate: {

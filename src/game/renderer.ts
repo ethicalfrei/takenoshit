@@ -1,4 +1,4 @@
-import { WALK_FLIP, type SpriteBook } from "./assets";
+import { type SpriteBook } from "./assets";
 import type { PlayerPose, ViewModel } from "./combat";
 import type { Lane } from "./content/roster";
 
@@ -96,7 +96,7 @@ function drawWalk(
     const fps = 8;
     const fi = Math.floor(vm.walkT * fps) % frames.length;
     const x = w * 0.36;
-    sprite(ctx, frames[fi], x, h * 0.96, h * 0.44, { flip: Boolean(WALK_FLIP[fi]) });
+    sprite(ctx, frames[fi], x, h * 0.96, h * 0.44);
   }
 
   if (vm.showIntro) {
