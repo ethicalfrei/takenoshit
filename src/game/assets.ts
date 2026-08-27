@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=live5";
+const V = "v=live6";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -27,8 +27,8 @@ const PATHS = {
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  // 0 and 5 are left-profile "turning around" poses. 1–4 face the camera, same direction.
-  walk: [1, 2, 3, 4].map((i) => `/sprites/player-walk-${i}.png?${V}`),
+  // 0, 1, 5 face left / turn around. 2–4 walk toward the camera, same direction.
+  walk: [2, 3, 4].map((i) => `/sprites/player-walk-${i}.png?${V}`),
   bosses: {
     roommate: {
       idle: "/sprites/roommate-idle.png",
@@ -286,4 +286,3 @@ export function warmFightVisuals(book: SpriteBook, id: string) {
     if (img?.decode) void img.decode().catch(() => {});
   }
 }
-
