@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=live8";
+const V = "v=live10";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -27,8 +27,8 @@ const PATHS = {
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  // Six 3/4-toward-camera walk poses. No side-profile reverse, no mirroring.
-  walk: [0, 1, 2, 3, 4, 5].map((i) => `/sprites/player-walk-${i}.png?${V}`),
+  // Walk cycle from a 2x3 Imagine sheet. Arms swing. No reverse profile, no punch/jab.
+  walk: [0, 1, 2, 3, 4].map((i) => `/sprites/player-walk-${i}.png?${V}`),
   bosses: {
     roommate: {
       idle: "/sprites/roommate-idle.png",
