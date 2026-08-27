@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=live10";
+const V = "v=live12";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -27,8 +27,8 @@ const PATHS = {
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  // Walk cycle from a 2x3 Imagine sheet. Arms swing. No reverse profile, no punch/jab.
-  walk: [0, 1, 2, 3, 4].map((i) => `/sprites/player-walk-${i}.png?${V}`),
+  // Walk cycle: 5 stride frames + closed-legs passing pose. No reverse, no punch/jab.
+  walk: [0, 1, 2, 3, 4, 5].map((i) => `/sprites/player-walk-${i}.png?${V}`),
   bosses: {
     roommate: {
       idle: "/sprites/roommate-idle.png",
@@ -158,7 +158,7 @@ function loadInto(img: HTMLImageElement, src: string) {
   return new Promise<HTMLImageElement>((resolve) => {
     img.onload = () => resolve(img);
     img.onerror = () => resolve(img);
-    img.src = asset(src);
+    img.src = src.startsWith("data:") ? src : asset(src);
   });
 }
 
@@ -286,4 +286,3 @@ export function warmFightVisuals(book: SpriteBook, id: string) {
     if (img?.decode) void img.decode().catch(() => {});
   }
 }
-
