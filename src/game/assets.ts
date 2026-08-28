@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=rev1";
+const V = "v=tie10";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -27,7 +27,7 @@ const PATHS = {
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  // Walk cycle: stride 0–4 + cand 2/3 (lifted) + cand 4 (passing). No reverse, no punch/jab.
+  // Walk: all 10 office-guy poses, shuffled-ish, not a perfect gait. Includes gestures + one rear punch.
   walk: [
     `/sprites/player-walk-0.png?${V}`,
     `/sprites/player-walk-1.png?${V}`,
@@ -37,6 +37,8 @@ const PATHS = {
     `/sprites/player-walk-5.png?${V}`,
     `/sprites/player-walk-6.png?${V}`,
     `/sprites/player-walk-7.png?${V}`,
+    `/sprites/player-walk-8.png?${V}`,
+    `/sprites/player-walk-9.png?${V}`,
   ],
   bosses: {
     roommate: {
