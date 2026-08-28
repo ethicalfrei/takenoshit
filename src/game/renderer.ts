@@ -93,7 +93,7 @@ function drawWalk(
 
   const frames = assets.walk;
   if (frames.length) {
-    const fps = 8;
+    const fps = 12;
     const fi = Math.floor(vm.walkT * fps) % frames.length;
     const x = w * 0.36;
     sprite(ctx, frames[fi], x, h * 0.96, h * 0.44);

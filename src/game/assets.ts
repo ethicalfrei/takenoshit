@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=tie10";
+const V = "v=walkvid";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -27,19 +27,8 @@ const PATHS = {
     duck: `/sprites/player-duck.png?${V}`,
     grab: `/sprites/player-grab.png?${V}`,
   },
-  // Walk: all 10 office-guy poses, shuffled-ish, not a perfect gait. Includes gestures + one rear punch.
-  walk: [
-    `/sprites/player-walk-0.png?${V}`,
-    `/sprites/player-walk-1.png?${V}`,
-    `/sprites/player-walk-2.png?${V}`,
-    `/sprites/player-walk-3.png?${V}`,
-    `/sprites/player-walk-4.png?${V}`,
-    `/sprites/player-walk-5.png?${V}`,
-    `/sprites/player-walk-6.png?${V}`,
-    `/sprites/player-walk-7.png?${V}`,
-    `/sprites/player-walk-8.png?${V}`,
-    `/sprites/player-walk-9.png?${V}`,
-  ],
+  // Walk: keyed 12fps cycle from the office-guy walk clip. No pink, no reverse.
+  walk: Array.from({ length: 22 }, (_, i) => `/sprites/player-walk-${i}.png?${V}`),
   bosses: {
     roommate: {
       idle: "/sprites/roommate-idle.png",
@@ -169,7 +158,7 @@ function loadInto(img: HTMLImageElement, src: string) {
   return new Promise<HTMLImageElement>((resolve) => {
     img.onload = () => resolve(img);
     img.onerror = () => resolve(img);
-    img.src = src.startsWith("data:") ? src : asset(src);
+    img.src = asset(src);
   });
 }
 
@@ -297,3 +286,4 @@ export function warmFightVisuals(book: SpriteBook, id: string) {
     if (img?.decode) void img.decode().catch(() => {});
   }
 }
+
