@@ -537,7 +537,7 @@ export class FightSim {
     }
     if (this.mash.count >= this.mash.goal) {
       this.score += 500 + this.bossIndex * 250;
-      this.line = this.boss.finisher.successLine;
+      this.line = "";
       this.cinematic = { kind: "finisher", t: 0, id: this.boss.id };
       this.onSfx("impact");
       this.juice.freeze(0.12);

@@ -339,7 +339,7 @@ export function GameApp() {
 
       {hud.boss.id === "cops" && hud.phase === "fight" && <BeatdownBanner line={hud.line} />}
 
-      {showFightUi && (
+      {showFightUi && !hud.finisherPlay && (
         <Hud
           hud={hud}
           onPause={() => {
@@ -347,6 +347,19 @@ export function GameApp() {
             setHud(simRef.current.hud());
           }}
         />
+      )}
+      {hud.finisherPlay && (
+        <button
+          type="button"
+          onClick={() => {
+            simRef.current.paused = true;
+            setHud(simRef.current.hud());
+          }}
+          aria-label="Pause"
+          className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex h-11 w-11 items-center justify-center rounded-md border border-cream/15 bg-ink-2 text-cream"
+        >
+          <Pause className="size-4" strokeWidth={2.2} />
+        </button>
       )}
 
       {hud.mash && <MashOverlay mash={hud.mash} />}
