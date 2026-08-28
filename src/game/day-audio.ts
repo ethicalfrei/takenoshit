@@ -73,7 +73,7 @@ function asset(path: string) {
   return `${base}${path}`;
 }
 
-const V = "v=novox2";
+const V = "v=novox3";
 
 const BED_URL: Record<MusicScene, string> = {
   title: asset(`/music/title.mp3?${V}`),

@@ -9,7 +9,7 @@ export type SpriteBook = {
   fatality: Record<string, HTMLImageElement>;
 };
 
-const V = "v=novox2";
+const V = "v=novox3";
 
 function asset(path: string) {
   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
@@ -123,15 +123,15 @@ const PATHS = {
 };
 
 export const FATALITY_VID: Record<string, string> = {
-  roommate: asset("/fatalities/roommate.mp4?v=novox2"),
-  leaf: asset("/fatalities/leaf.mp4?v=novox2"),
-  baker: asset("/fatalities/baker.mp4?v=novox2"),
-  barista: asset("/fatalities/barista.mp4?v=novox2"),
-  manager: asset("/fatalities/manager.mp4?v=novox2"),
-  hr: asset("/fatalities/hr.mp4?v=novox2"),
-  gym: asset("/fatalities/gym.mp4?v=novox2"),
-  boss: asset("/fatalities/boss.mp4?v=novox2"),
-  cops: asset("/fatalities/cops.mp4?v=novox2"),
+  roommate: asset("/fatalities/roommate.mp4?v=novox3"),
+  leaf: asset("/fatalities/leaf.mp4?v=novox3"),
+  baker: asset("/fatalities/baker.mp4?v=novox3"),
+  barista: asset("/fatalities/barista.mp4?v=novox3"),
+  manager: asset("/fatalities/manager.mp4?v=novox3"),
+  hr: asset("/fatalities/hr.mp4?v=novox3"),
+  gym: asset("/fatalities/gym.mp4?v=novox3"),
+  boss: asset("/fatalities/boss.mp4?v=novox3"),
+  cops: asset("/fatalities/cops.mp4?v=novox3"),
 };
 
 function placeholder() {
